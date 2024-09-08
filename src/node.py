@@ -19,9 +19,13 @@ class NormalNodeType(BaseNodeType):
     next: str
     onFail: Any
 
+class ConditionNext(TypedDict):
+    success: str
+    fail: str
+
 class ConditionNodeType(BaseNodeType):
     type: "condition"
-    next: { "success": str, "fail": str }
+    next: ConditionNext
 
 class Node:
     node: NormalNodeType | ConditionNodeType
@@ -31,17 +35,17 @@ class Node:
         self.node = node
 
     def command(self) -> str:
-        command = f'echo {shlex.quote(self.node["code"])} > {self.root}/{self.node["id"]}.ts'
+        command = f'echo {shlex.quote(self.node["code"])} > {self.root}/{self.node["name"]}.ts'
         return command
 
     def export(self):
-        return "export { main as " + self.node["id"] + " } from " + f'"./{self.node["id"]}.ts"'
+        return "export { main as " + self.node["name"] + " } from " + f'"./{self.node["name"]}.ts"'
 
 
 node = Node("/koxy", {
     "type": "normal",
-    "id": "node1",
-    "name": "Node 1",
+    "id": "fmsiodfhsdof",
+    "name": "node1",
     "next": [],
     "code": """const fs = require("fs");
 

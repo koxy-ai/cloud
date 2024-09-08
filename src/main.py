@@ -1,26 +1,41 @@
 import modal
+import asyncio
 
-sb = modal.Sandbox.create(
-    *["sleep", "infinity"], image=modal.Image.debian_slim(), timeout=20
-)
 # sb = modal.Sandbox.from_id("sb-HTuc0F7q9PUuEcz4TqN8ik")
 
-# for line in sb.stdout:
-#     print(line)
+async def read_stdout(process):
+    for line in process.stdout:
+        print(line, str.startswith(line, "foo 4"))
 
-# sb.wait()
+        if (str.startswith(line, "foo 4")):
+            break
 
-# sb = modal.Sandbox.from_id("sb-yXV4ohe1VjxlanJhuaxgZ2")
+async def main():
+    print("Started")
 
-print(sb.object_id)
+    sb = modal.Sandbox.create(
+        *["sleep", "infinity"], 
+        image=modal.Image.debian_slim(),
+        timeout=20
+    )
 
-print("starting process")
-process = sb.exec("bash", "-c", "for i in $(seq 1 10); do echo foo $i; sleep 0.5; done")
+    print(sb.object_id)
 
-for line in process.stdout:
-    print(line)
+    # stdout_task0 = asyncio.create_task(read_stdout(sb))
+    print("starting process")
+    process = sb.exec("bash", "-c", "for i in $(seq 1 10); do echo foo $i; sleep 0.5; done")
 
-process.wait()
-print(process.returncode)
+    stdout_task = asyncio.create_task(read_stdout(process))
 
-sb.terminate()
+    print("Got here")
+
+    await stdout_task
+
+    print("Finished printing")
+    process.wait()
+
+    print(process.returncode)
+    sb.terminate()
+
+
+asyncio.run(main())

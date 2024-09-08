@@ -55,3 +55,7 @@ console.log("hi", 'hi', `${Date.now()} "f"`, fs)"""
 print(node.command())
 print("---")
 print(node.export())
+
+mynodes: List[List[str, Node]] = [
+    []
+]

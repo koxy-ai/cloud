@@ -12,7 +12,6 @@ class Keox:
             .run_commands(
                 # "curl -fsSL https://deno.land/x/install/install.sh | sh",
                 "git clone https://github.com/koxy-ai/cloud /source",
-                "chmod +x /source/deno.sh && /source/deno.sh",
                 "echo 'READY'"
             )
         )

@@ -31,7 +31,7 @@ class Sandbox:
         startAt = time.time()
 
         sb = modal.Sandbox.create(
-            *["bash", "-c", f"echo {api} > /source/api.json && cat /source/api.json && /root/.deno/deno/bin run --allow-all /source/heart/main.ts"],
+            *["bash", "-c", f"chmod +x /source/deno.sh && /source/deno.sh && echo {api} > /source/api.json && cat /source/api.json && /root/.deno/deno/bin run --allow-all /source/heart/main.ts"],
             image=image,
             timeout=10,
             encrypted_ports=[9009],

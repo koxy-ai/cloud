@@ -1,5 +1,7 @@
-#!/bin/sh# Copyright 2019 the Deno authors. All rights reserved. MIT license.# TODO(everyone): Keep this script simple and easily auditable.
+#!/bin/bash
+
 set -e
+
 if ! command -v unzip >/dev/null && ! command -v 7z >/dev/null; then	echo "Error: either unzip or 7z is required to install Deno (see: https://github.com/denoland/deno_install#either-unzip-or-7z-is-required )." 1>&2	exit 1fi
 if [ "$OS" = "Windows_NT" ]; then	target="x86_64-pc-windows-msvc"else	case $(uname -sm) in	"Darwin x86_64") target="x86_64-apple-darwin" ;;	"Darwin arm64") target="aarch64-apple-darwin" ;;	"Linux aarch64") target="aarch64-unknown-linux-gnu" ;;	*) target="x86_64-unknown-linux-gnu" ;;	esacfi
 if [ $# -eq 0 ]; then	deno_uri="https://github.com/denoland/deno/releases/latest/download/deno-${target}.zip"else	deno_uri="https://github.com/denoland/deno/releases/download/${1}/deno-${target}.zip"fi

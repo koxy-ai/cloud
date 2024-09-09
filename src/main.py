@@ -19,6 +19,7 @@ async def main():
         timeout=20
     )
 
+    print(sb)
     print(sb.object_id)
 
     # stdout_task0 = asyncio.create_task(read_stdout(sb))

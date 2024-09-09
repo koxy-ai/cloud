@@ -11,7 +11,7 @@ const handler = async (request: Request): Promise<Response> => {
 
   console.log(body);
 
-  const koxy = new Koxy(request.headers, body);
+  const koxy = new Koxy({} as Api, request.headers, body);
 
   return new Response("Hi", { status: 200 });
 };

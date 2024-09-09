@@ -1,34 +1,7 @@
 import shlex
 from typing import TypedDict, Optional, Any, List
 
-class Input(TypedDict):
-    type: str
-    key: str
-    required: bool
-    validationRegex: Optional[str]
-    default: Any
-
-class BaseNodeType(TypedDict):
-    id: str
-    name: str
-    code: str
-    inputs: List[Input]
-
-class NormalNodeType(BaseNodeType):
-    type: "normal"
-    next: str
-    onFail: Any
-
-class ConditionNext(TypedDict):
-    success: str
-    fail: str
-
-class ConditionNodeType(BaseNodeType):
-    type: "condition"
-    next: ConditionNext
-
 class Node:
-
     def __init__(self, root: str, templates: str, node):
         self.root = root
         self.node = node
@@ -100,24 +73,3 @@ class Node:
             "code": self.node["code"],
             "export": self.export()
         }
-
-
-node = Node("/koxy", "./heart/src/templates", {
-    "type": "normal",
-    "id": "fmsiodfhsdof",
-    "name": "node1",
-    "next": [],
-    "inputs": [
-        [{"key": "date", "type": "number"}, "code:K::Date.now()"],
-        [{"key": "hi-s", "type": "string"}, "string:K::hi"],
-    ],
-    "code": """const fs = require("fs");
-
-console.log("hi", 'hi', `${Date.now()} "f"`, fs)"""
-})
-
-# print(node.buildNode())
-
-# print(node.command())
-# print("---")
-# print(node.export())

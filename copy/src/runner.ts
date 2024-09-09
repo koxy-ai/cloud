@@ -14,7 +14,7 @@ const nodes: Record<
   string,
   [KoxyNode, { main: NodeFunc; failed?: NodeFunc }]
 > = {
-  "node1": [{"type": "normal", "id": "node1id", "name": "node1", "label": "Node", "description": "", "icon": "", "next": "node2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy, inputs) {\n                            console.log(\"node1\", inputs);\n                            return 4;\n                        }"}, { main: 
+  "node1": [{"type": "normal", "id": "node1id", "name": "node1", "label": "Node", "description": "", "icon": "", "next": "node2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy, inputs) {\n                            console.log(\"node1\", inputs);\n                            return \"Hi\";\n                        }"}, { main: 
 (async (node: NormalNode, Koxy: KoxyClass, self: {
   main: Function;
   failed?: Function;
@@ -118,11 +118,11 @@ const nodes: Record<
     return KoxyClass.stopSign;
   }
 }),}],
-"end": [{"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "node1", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}, { main: 
+"end": [{"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}, { main: 
 (async (node: ReturnNode, Koxy: KoxyClass, self) => {
   try {
     const inputs = {
-      "node1": Koxy.results.get("node1"),
+      "response": Koxy.results.get("node1"),
     };
 
     const validator = new ValidateInputs(Koxy, node.inputs);

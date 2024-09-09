@@ -1,6 +1,13 @@
 import modal
 import asyncio
 
+class Sandbox:
+
+    def __init__(self):
+        pass
+
+
+
 # sb = modal.Sandbox.from_id("sb-HTuc0F7q9PUuEcz4TqN8ik")
 
 async def read_stdout(process):
@@ -38,4 +45,4 @@ async def main():
     sb.terminate()
 
 
-asyncio.run(main())
+# asyncio.run(main())

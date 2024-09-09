@@ -4,6 +4,7 @@ import shutil
 import shlex
 import json
 from typing import Dict, Optional
+import sys
 
 class Builder:
     def __init__(self, source: str, path: str, api: Dict, env: Optional[Dict[str, str]] | None = None):
@@ -12,7 +13,7 @@ class Builder:
         self.api = api
         self.env = env
 
-    def copySource(self):
+    def copy_source(self):
         print("Copying source code to destination")
 
         if not os.path.exists(self.path):
@@ -22,7 +23,7 @@ class Builder:
         os.system(f'/bin/bash -c "cp -r {self.source}/* {self.path}"')
         print("Copied source code to destination")
 
-    def writeNodes(self):
+    def write_nodes(self):
         print("Writing nodes")
 
         nodes = []
@@ -49,7 +50,7 @@ class Builder:
                         print(f"Writing {n['type']} node: {n['name']}")
 
                         exports += built["export"] + "\n"
-                        os.system(f"/bin/bash -c 'echo holder > {self.path}/src/nodes/{n['id']}.ts'")
+                        os.system(f"/bin/bash -c 'touch {self.path}/src/nodes/{n['id']}.ts'")
                         with open(f"{self.path}/src/nodes/{n['id']}.ts", "w") as file:
                             file.write(n["code"])
                             file.close()
@@ -76,7 +77,7 @@ class Builder:
                 f.write(content)
                 f.close()
 
-    def writeApi(self):
+    def write_api(self):
         print("Writing api")
 
         with open(f"{self.path}/main.ts", "r") as f:
@@ -88,7 +89,7 @@ class Builder:
                 f.write(content)
                 f.close()
 
-    def writeEnv(self):
+    def write_env(self):
         print("Writing env")
 
         with open(f"{self.path}/.env", "w") as f:
@@ -98,101 +99,32 @@ class Builder:
 
     def build(self, copy: bool = True):
         if copy != False:
-            self.copySource()
+            self.copy_source()
 
-        self.writeNodes()
-        self.writeApi()
+        self.write_nodes()
+        self.write_api()
 
         if self.env:
-            self.writeEnv()
+            self.write_env()
 
         print(f"Done building project: {self.api['id']}")
 
-testapi = dict({
-    "id": "324",
-    "flows": {
-        "/api/hi": [
-            {
-                "id": "1",
-                "name": "1",
-                "method": "GET",
-                "history": [],
-                "dependecies": [],
-                "start": {
-                    "type": "start",
-                    "id": "start",
-                    "name": "start",
-                    "label": "start",
-                    "icon": "start",
-                    "description": "start",
-                    "code": "start",
-                    "inputs": [],
-                    "next": "node1",
-                },
-                "end": {
-                    "type": "return",
-                    "id": "end",
-                    "name": "end",
-                    "label": "end",
-                    "icon": "end",
-                    "description": "end",
-                    "code": "end",
-                    "inputs": [
-                        [{
-                            "key": "response",
-                            "type": "string",
-                            "label": "",
-                            "required": True,
-                            "visible": True,
-                        },
-                        'code:K::Koxy.results.get("node1")']
-                    ],
-                },
-                "nodes": [
-                    {
-                        "type": "normal",
-                        "id": "node1id",
-                        "name": "node1",
-                        "label": "Node",
-                        "description": "",
-                        "icon": "",
-                        "next": "node2",
-                        "inputs": [
-                            [{"key": "date", "type": "number", "label": "", "required": True, "visible": True}, "code:K::Date.now()"],
-                            [{"key": "hi-s", "type": "string", "label": "", "required": True, "visible": True}, "string:K::hi"],
-                        ],
-                        "code": """export async function main(koxy, inputs) {
-                            console.log("node1", inputs);
-                            return "Hi";
-                        }"""
-                    },
-                    {
-                        "type": "normal",
-                        "id": "node2id",
-                        "name": "node2",
-                        "label": "Node",
-                        "description": "",
-                        "icon": "",
-                        "next": "end",
-                        "inputs": [
-                            [{"key": "date", "type": "number", "label": "", "required": True, "visible": True}, "code:K::Date.now()"],
-                            [{"key": "hi-s", "type": "string", "label": "", "required": True, "visible": True}, "string:K::hi"],
-                        ],
-                        "code": """export async function main(koxy, inputs) {console.log("node2", inputs)}"""
-                    },
-                ]
-            },
-        ],
-    },
-})
+if __name__ == "__main__":
+    with open(f"{os.path.dirname(os.path.realpath(__file__))}/api.json") as f:
+        testapi = json.load(f)
+        f.close()
 
-builder = Builder(
-    "/home/user/cloud/heart", 
-    "/home/user/cloud/copy", 
-    testapi, 
-    {
-        "TOKEN": "fmdslnfdslgsdygojo34yeifd",
-        "TOKEN2": "fndsfknsdkofdpgofdu"
-    }
-)
-builder.build()
+        args = sys.argv[1:]
+        options = {}
+
+        for arg in args:
+            [key, value] = str.split(arg, "=")
+            options[key] = value
+
+        builder = Builder(
+            options["source"],
+            options["path"],
+            testapi, 
+        )
+
+        builder.build()

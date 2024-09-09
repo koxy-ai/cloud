@@ -40,14 +40,9 @@ class Box:
                             file.write(n["code"])
                             file.close()
 
-        # for i in range(len(commands)):
-        #     os.system(f'/bin/bash -c "{commands[i]}"')
-
         with open(f"{self.path}/src/nodes/index.ts", "w") as f:
             f.write(exports)
             f.close()
-
-        # os.system(f'/bin/bash -c "echo {shlex.quote(exports)} > {self.path}/src/nodes/index.ts"')
 
         with open(f"{self.path}/src/runner.ts", "r") as f:
             content = f.read()
@@ -59,9 +54,20 @@ class Box:
                 f.write(content)
                 f.close()
 
+    def writeApi(self):
+        with open(f"{self.path}/main.ts", "r") as f:
+            content = f.read()
+            content = str.replace(content, '"// <KOXY_API>"', json.dumps(self.api))
+            f.close()
+
+            with open(f"{self.path}/main.ts", "w") as f:
+                f.write(content)
+                f.close()
+
     def build(self):
         self.copySource()
         self.writeNodes()
+        self.writeApi()
 
 testapi = dict({
     "id": "324",

@@ -1,6 +1,5 @@
 import { Koxy as KoxyClass } from "./koxy.ts";
 import { ValidateInputs } from "./validate-inputs.ts"; // never remove this
-import Benchmark from "npm:benchmark";
 import type { Flow, KoxyNode, ReturnNode, NormalNode } from "./index.d.ts";
 import * as koxyNodes from "./nodes/index.ts";
 
@@ -10,77 +9,6 @@ type NodeFunc = (
   self: { main: Function; failed?: Function },
   retry?: number,
 ) => any;
-
-export const myNodes: KoxyNode[] = [
-  {
-    id: "node1",
-    name: "node1",
-    type: "normal",
-    label: "node1",
-    icon: "node1",
-    description: "node1",
-    code: "node1",
-    inputs: [],
-    next: "node2",
-    onFail: {
-      type: "retry",
-      max: 3,
-      interval: 1000,
-      continue: true,
-    },
-  },
-  {
-    id: "node2",
-    name: "node2",
-    type: "condition",
-    label: "node2",
-    icon: "node2",
-    description: "node2",
-    code: "node2",
-    inputs: [],
-    next: {
-      success: "end",
-      fail: KoxyClass.stopSign,
-    },
-  },
-  {
-    type: "return",
-    id: "end",
-    name: "end",
-    label: "end",
-    icon: "end",
-    description: "end",
-    code: "end",
-    inputs: [],
-  },
-];
-
-const testnodes = {
-  "node1": [
-    myNodes[0],
-    {
-      main: (async () => {
-        return true;
-      }),
-    },
-  ],
-  "node2": [
-    myNodes[1],
-    {
-      main: async (node: KoxyNode, koxy: KoxyClass, self) => {
-        return koxy.results.get("node1");
-      },
-    },
-  ],
-  "end": [
-    myNodes[2],
-    {
-      main: async () => {
-        return { status: 200, message: "Hi!" };
-      },
-    },
-  ],
-};
 
 const nodes: Record<
   string,
@@ -399,74 +327,3 @@ export class Runner {
     return typeof value === "string" && value.length > 0;
   }
 }
-
-const myapi: any = {"id": "324", "flows": {"/api/hi": [{"id": "1", "name": "1", "method": "GET", "history": [], "dependecies": [], "start": {"type": "start", "id": "start", "name": "start", "label": "start", "icon": "start", "description": "start", "code": "start", "inputs": [], "next": "node1"}, "end": {"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "node1", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}, "nodes": [{"type": "normal", "id": "node1id", "name": "node1", "label": "Node", "description": "", "icon": "", "next": "node2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy, inputs) {\n                            console.log(\"node1\", inputs);\n                            return 4;\n                        }"}, {"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy, inputs) {console.log(\"node2\", inputs)}"}, {"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "node1", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}]}]}};
-const testkoxy = new KoxyClass(myapi, {} as any, {}, true);
-
-// export const testkoxy = new Koxy(
-//   {
-//     flows: {
-//       "/api/hi": [
-//         {
-//           id: "1",
-//           name: "1",
-//           method: "GET",
-//           history: [],
-//           "dependecies": [],
-//           start: {
-//             type: "start",
-//             id: "start",
-//             name: "start",
-//             label: "start",
-//             icon: "start",
-//             description: "start",
-//             code: "start",
-//             inputs: [],
-//             next: "node1",
-//           },
-//           end: {
-//             type: "return",
-//             id: "end",
-//             name: "end",
-//             label: "end",
-//             icon: "end",
-//             description: "end",
-//             code: "end",
-//             inputs: [],
-//           },
-//           nodes: myNodes,
-//         },
-//       ],
-//     },
-//   },
-//   {} as any,
-//   {},
-//   true
-// );
-
-(async () => {
-  console.time("run");
-  const res = await testkoxy.run("/api/hi/", "GET");
-  console.timeEnd("run");
-
-  console.log(res);
-  console.log(testkoxy.results);
-
-  return;
-
-  const suite = new Benchmark.Suite();
-
-  suite.add("run", async () => {
-    await testkoxy.run("/api/hi/", "GET");
-  });
-
-  suite
-    .on("cycle", (event: any) => {
-      console.log(String(event.target));
-    })
-    .on("complete", function (this: any) {
-      console.log("benchmark finished");
-    });
-
-  await suite.run({ async: true });
-})();

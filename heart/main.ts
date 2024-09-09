@@ -1,5 +1,4 @@
 import { Koxy } from "./src/koxy.ts";
-import { testkoxy } from "./src/runner.ts";
 
 let api: any = "// <KOXY_API>";
 
@@ -21,13 +20,9 @@ const handler = async (request: Request): Promise<Response> => {
     } catch (e) {} // no need for anything here
   }
 
-  console.log(body);
+  const koxy = new Koxy(api, request.headers, body);
 
-  // const koxy = new Koxy(api, request.headers, body);
-  testkoxy.body = body;
-  testkoxy.headers = request.headers;
-
-  const res = await testkoxy.run(
+  const res = await koxy.run(
     request.headers.get("path") ||
       request.url.replace("http://127.0.0.1:9009", ""),
     request.headers.get("method") || request.method,

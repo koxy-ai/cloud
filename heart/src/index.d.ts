@@ -18,10 +18,9 @@ interface CustomOnFail {
   code: string;
 }
 
-type OnFail = RetryOnFail | TerminateOnFail | IgnoreOnFail | CustomOnFail;
+export type OnFail = RetryOnFail | TerminateOnFail | IgnoreOnFail | CustomOnFail;
 
-interface Input {
-  type: string;
+interface UntypedInput {
   key: string;
   label: string;
   description?: string;
@@ -33,7 +32,23 @@ interface Input {
   default?: any;
 }
 
-interface BaseNode {
+interface BaseInput extends UntypedInput {
+  type: "string" | "number" | "boolean" | "any";
+}
+
+interface ArrayInput extends UntypedInput {
+  type: "array";
+  items: BaseInput | ObjectInput | ArrayInput;
+}
+
+interface ObjectInput extends UntypedInput {
+  type: "object";
+  properties: [BaseInput | ObjectInput | ArrayInput, string][];
+}
+
+export type Input = BaseInput | ObjectInput | ArrayInput;
+
+export interface BaseNode {
   id: string;
   name: string;
   label: string;
@@ -41,46 +56,44 @@ interface BaseNode {
   description: string;
 
   code: string;
-  inputs: [Input, string][]; // value format: <kv-[type]>::
-  dependencies: string[];
+  inputs: [Input, string][]; // value format: type:K::
 
   group?: string;
   docs?: string; // markdown documentation
   help?: string; // link
 }
 
-interface NormalNode extends BaseNode {
+export interface NormalNode extends BaseNode {
   type: "normal";
   next: string;
   onFail?: OnFail;
 }
 
-interface ConditionNode extends BaseNode {
+export interface ConditionNode extends BaseNode {
   type: "condition";
   next: { success: string; fail: string };
 }
 
-interface ControlNode extends BaseNode {
+export interface ControlNode extends BaseNode {
   type: "control";
   next: string;
   children: NormalNode[];
 }
 
-interface StartNode extends BaseNode {
+export interface StartNode extends BaseNode {
   type: "start";
   next: string;
 }
 
-interface ReturnNode extends BaseNode {
+export interface ReturnNode extends BaseNode {
   type: "return";
 }
 
-type KoxyNode = NormalNode | ConditionNode | ControlNode;
+export type KoxyNode = NormalNode | ConditionNode | ControlNode | ReturnNode;
 
-interface Flow {
+export interface Flow {
   id: string;
   name: string;
-  path: string;
   method: "GET" | "POST" | "PUT" | "DELETE";
 
   start: StartNode;
@@ -91,6 +104,6 @@ interface Flow {
   dependecies: string[];
 }
 
-interface Api {
+export interface Api {
   flows: Record<string, Flow[]>;
 }

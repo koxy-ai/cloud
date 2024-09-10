@@ -17,9 +17,6 @@ class SandBoxItem(TypedDict):
     expires_at: str
     latest_request: str
 
-keox = Keox()
-image = keox.build_image()
-
 class Sandbox:
     pool: Dict[str, SandBoxItem]
     id: str
@@ -28,22 +25,14 @@ class Sandbox:
         self.pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
         self.id = id
 
-    def create(self, api: str, onlog):
+    def create(self, api: dict, onlog):
+        keox = Keox(api)
         startAt = time.time()
 
-        # sb = modal.Sandbox.create(
-        #     *["bash", "-c", f"echo {api} > /source/api.json && python /source/src/builder.py source=/source/heart path=/koxy && /root/.deno/bin/deno run --allow-all /koxy/main.ts"],
-        #     image=image,
-        #     timeout=15,
-        #     encrypted_ports=[9009],
-        #     # gpu=modal.gpu.T4(count=1),
-        # )
-
-        sb = keox.build_sandbox(api)
+        sb = keox.build_sandbox(True)
 
         took = time.time() - startAt
         print(f"created in {took}")
-        startAt = time.time()
 
         tunnel = sb.tunnels()[0]
         host = f"https://{tunnel.host}"
@@ -63,17 +52,32 @@ class Sandbox:
         sb.terminate()
         return
 
-        # pull = sb.exec("bash", "-c", "cd /source && git pull")
+    def spinup(self, api: dict, onlog):
+        keox = Keox(api)
+        startAt = time.time()
 
-        # for line in pull.stdout:
-        #     print(line)
+        sb = keox.build_sandbox(False)
 
-        # for line in pull.stderr:
-        #     print(line)
+        took = time.time() - startAt
+        print(f"created in {took}")
 
-        # pull.wait()
+        tunnel = sb.tunnels()[0]
+        host = f"https://{tunnel.host}"
 
-        pass
+        for line in sb.stdout:
+            onlog(line)
+            if str.startswith(str.lower(line), "listening"):
+                took = time.time() - startAt
+                print(f"done in {took}")
+                break
+
+        print("READY")
+
+        req  = requests.get(f"{host}/api/hi", headers={"path": "/api/hi"})
+        print(req.text)        
+
+        sb.terminate()
+        return
 
     def get(self) -> SandBoxItem | None:
         try:
@@ -104,7 +108,7 @@ def onlog(line):
     print(line)
 
 with open("./src/api.json", "r") as f:
-    content = json.dumps(f.read())
+    content = json.load(f)
     sandbox = Sandbox("123")
     sandbox.create(
         content, onlog

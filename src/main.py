@@ -1,118 +1,21 @@
 import modal
 import asyncio
-from typing import TypedDict, Dict, List
+from typing import TypedDict, Dict, List, Callable, Any
 from datetime import datetime, timezone, timedelta
 from keox import Keox
+from sandbox import Sandbox
 import time
 import json
 import shlex
 import requests
 
-class SandBoxItem(TypedDict):
-    id: str
-    sandbox: modal.Sandbox
-    host: str
-    state: str
-    created_at: str
-    expires_at: str
-    latest_request: str
-
-class Sandbox:
-    pool: Dict[str, SandBoxItem]
-    id: str
-
-    def __init__(self, id: str):
-        self.pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
-        self.id = id
-
-    def create(self, api: dict, onlog):
-        keox = Keox(api)
-        startAt = time.time()
-
-        sb = keox.build_sandbox(True)
-
-        took = time.time() - startAt
-        print(f"created in {took}")
-
-        tunnel = sb.tunnels()[0]
-        host = f"https://{tunnel.host}"
-
-        for line in sb.stdout:
-            onlog(line)
-            if str.startswith(str.lower(line), "listening"):
-                took = time.time() - startAt
-                print(f"done in {took}")
-                break
-
-        print("READY")
-
-        req  = requests.get(f"{host}/api/hi", headers={"path": "/api/hi"})
-        print(req.text)        
-
-        sb.terminate()
-        return
-
-    def spinup(self, api: dict, onlog):
-        keox = Keox(api)
-        startAt = time.time()
-
-        sb = keox.build_sandbox(False)
-
-        took = time.time() - startAt
-        print(f"created in {took}")
-
-        tunnel = sb.tunnels()[0]
-        host = f"https://{tunnel.host}"
-
-        for line in sb.stdout:
-            onlog(line)
-            if str.startswith(str.lower(line), "listening"):
-                took = time.time() - startAt
-                print(f"done in {took}")
-                break
-
-        print("READY")
-
-        req  = requests.get(f"{host}/api/hi", headers={"path": "/api/hi"})
-        print(req.text)        
-
-        sb.terminate()
-        return
-
-    def get(self) -> SandBoxItem | None:
-        try:
-            return self.pool[self.id]
-        except:
-            return None
-
-    def delete(self) -> bool:
-        try:
-            del self.pool[self.id]
-            return True
-        except:
-            return False
-
-    def terminate(self):
-        pass
-
-    def generate_timing(self, ms: int) -> List[str]:
-        created_at = datetime.now(timezone.utc)
-        created_at_iso = created_at.isoformat()
-
-        expiration_time = created_at + timedelta(milliseconds=ms)
-        expiration_time_iso = expiration_time.isoformat()
-
-        return [created_at_iso, expiration_time_iso]
-
-def onlog(line):
+def onlog(line: str):
     print(line)
 
 with open("./src/api.json", "r") as f:
     content = json.load(f)
-    sandbox = Sandbox("123")
-    sandbox.create(
-        content, onlog
-    )
+    sandbox = Sandbox(content)
+    sandbox.create(onlog)
 
 # sb = modal.Sandbox.from_id("sb-HTuc0F7q9PUuEcz4TqN8ik")
 

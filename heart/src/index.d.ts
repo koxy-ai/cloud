@@ -105,5 +105,10 @@ export interface Flow {
 }
 
 export interface Api {
+  id: string;
+  cpu?: number;
+  memory?: number;
+  memory_limit?: number;
+  autoscale?: boolean;
   flows: Record<string, Flow[]>;
 }

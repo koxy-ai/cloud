@@ -70,7 +70,6 @@ class Builder:
 
             content = f.read()
             content = str.replace(content, "// <KOXY_NODES_FUNCTIONS>", callers)
-            # content = str.replace(content, '"// <API_HERE>"', json.dumps(self.api))
             f.close()
 
             with open(f"{self.path}/src/runner.ts", "w") as f:
@@ -104,6 +103,9 @@ class Builder:
         self.write_nodes()
         self.write_api()
 
+        if "env" in self.api:
+            self.env = self.api["env"]
+
         if self.env:
             self.write_env()
 
@@ -120,6 +122,14 @@ if __name__ == "__main__":
         for arg in args:
             [key, value] = str.split(arg, "=")
             options[key] = value
+
+        if "source" not in options:
+            print("ERROR: No source specified")
+            exit(1)
+
+        if "path" not in options:
+            print("ERROR: No path specified")
+            exit(1)
 
         builder = Builder(
             options["source"],

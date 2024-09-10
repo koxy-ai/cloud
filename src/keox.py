@@ -1,22 +1,25 @@
 import modal
 import json
 import shlex
+import time
+from typing import Callable, Any
 
 class Keox:
     api: dict
+    deno: str = "/root/.deno/bin/deno"
 
     def __init__(self, api: dict):
         self.api = api
         pass
 
-    def build_image(self):
+    def build_image(self, onlog: Callable[[str], Any], force: bool = False):
         image = (
-            modal.Image.debian_slim(python_version="3.11.8")
+            modal.Image.debian_slim(python_version="3.11.8", force_build=force)
             .apt_install("git")
             .apt_install("curl")
             .apt_install("unzip")
             .run_commands(
-                "curl -fsSL https://deno.land/install.sh | sh",
+                "curl -fsSL https://deno.land/install.sh | sh -s v1.38.2",
                 "git clone https://github.com/koxy-ai/cloud /source",
                 f"echo {shlex.quote(json.dumps(self.api))} > /source/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
@@ -26,30 +29,31 @@ class Keox:
 
         return image
 
-    def build_sandbox(self, new: bool):
+    def build_sandbox(self, onlog: Callable[[str], Any], force: bool = False):
+        startAt = time.time()
         api = self.api
-        image = self.build_image()
+
+        onlog(f"Compiling sandbox image...")
+        image = self.build_image(onlog, force)
         vol = modal.Volume.from_name(f"vol-{api['id']}", create_if_missing=True)
-        # deno_vol = modal.Volume.from_name(f"deno-vol-{api['id']}", create_if_missing=True)
+
+        onlog(f"Building image & warming up new sandbox...")
 
         cpu = api["cpu"] if "cpu" in api else 1
+        gpu = self.read_gpu()
+
         memory_request = api["memory"] if "memory" in api else 1024
         memory_limit = api["memory_limit"] if "memory_limit" in api else 2048
+
         autoscale = api["autoscale"] if "autoscale" in api else False
 
-        build_command = [
-            "/root/.deno/bin/deno run --allow-all /koxy/main.ts"
-        ]
-
-        spin_command = [
-            "/root/.deno/bin/deno run --allow-all /koxy/main.ts"
-        ]
+        build_command = [ f"{self.deno} run --allow-all /koxy/main.ts" ]
 
         sandbox = modal.Sandbox.create(
             *[
                 "bash", 
                 "-c",
-                " && ".join(build_command) if new == True else " && ".join(spin_command)
+                " && ".join(build_command)
             ],
             image=image,
             timeout=15,
@@ -58,6 +62,43 @@ class Keox:
             memory=(memory_request, memory_limit) if autoscale == False else None,
             # volumes={"/koxy": vol}
             # gpu=modal.gpu.T4(count=1),
+            gpu=gpu
         )
 
-        return sandbox
+        tunnel_start = time.time()
+        tunnel = sandbox.tunnels()[0]
+        host = f"https://{tunnel.host}"
+        print(f"Tunnel took {str(time.time() - tunnel_start)[:4]}s")
+
+        for line in sandbox.stdout:
+            if str.startswith(str.lower(line), "listening"):
+                took = time.time() - startAt
+                print(f"Warmed sandbox in {str(took)[:4]}s")
+                onlog(line)
+                break
+            onlog(line)
+
+        return [sandbox, host]
+
+    def read_gpu(self):
+        gpu = self.api["gpu"] if "gpu" in self.api else None
+
+        if gpu == None:
+            return None
+
+        count = gpu["count"] if "count" in gpu else 1
+        type = gpu["type"] if "type" in gpu else "T4"
+
+        if type == "T4":
+            return modal.gpu.T4(count=count)
+
+        if type == "L4":
+            return modal.gpu.L4(count=count)
+
+        if type == "A10G":
+            return modal.gpu.A10G(count=count)
+
+        if type == "A100":
+            return modal.gpu.A100(count=count)
+
+        return None

@@ -42,8 +42,8 @@ class Keox:
         cpu = api["cpu"] if "cpu" in api else None
         gpu = self.read_gpu()
 
-        memory_request = api["memory"] if "memory" in api else None
-        memory_limit = api["memory_limit"] if "memory_limit" in api else None
+        memory_request = api["memory"] if "memory" in api else 1024
+        memory_limit = api["memory_limit"] if "memory_limit" in api else 2048
         memory = (memory_request, memory_limit) if isinstance(memory_request, int) and isinstance(memory_limit, int) else None
 
         timeout = api["timeout"] if "timeout" in api else 15
@@ -68,7 +68,7 @@ class Keox:
             encrypted_ports=[9009],
             cpu=cpu if autoscale == False else None,
             memory=memory if autoscale == False else None,
-            gpu=gpu
+            gpu=gpu,
         )
 
         tunnel_start = time.time()

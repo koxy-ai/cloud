@@ -15,19 +15,24 @@ class SandBoxItem(TypedDict):
     latest_request: str | None
     sandbox: modal.Sandbox
 
+pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
+creation_pool = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
+
 class Sandbox:
     pool: Dict[str, SandBoxItem]
+    local_pool: Dict[str, SandBoxItem]
     creation_state: Dict[str, bool]
     id: str
     api: dict
     keox: Keox
 
-    def __init__(self, api: dict, pool: Optional[modal.Dict] = None):
-        self.pool = pool if pool != None else modal.Dict.from_name("sandbox-pool", create_if_missing=True)
-        self.creation_state = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
+    def __init__(self, api: dict, pool: modal.Dict, creation_pool: modal.Dict, local_pool: Dict[str, SandBoxItem] = {}):
         self.id = api["id"]
         self.api = api
         self.keox = Keox(self.api)
+        self.pool = pool
+        self.creation_state = creation_pool
+        self.local_pool = local_pool
 
     def create(self, onlog: Callable[[str], Any]) -> SandBoxItem | None:
         try:
@@ -46,9 +51,6 @@ class Sandbox:
 
             [sandbox, host] = self.keox.build_sandbox(onlog)
 
-            req  = requests.get(f"{host}/api/hi", headers={"path": "/api/hi"})
-            print(req.json())
-
             timing = self.generate_timing(timeout*1000)
             item: SandBoxItem = {
                 "id": sandbox.object_id,
@@ -60,6 +62,7 @@ class Sandbox:
             }
 
             self.pool[self.id] = item
+            self.local_pool[self.id] = item
 
             if current != None:
                 try:
@@ -95,9 +98,11 @@ class Sandbox:
 
     def get(self, clone: bool = False) -> SandBoxItem | None:
         try:
-            sandbox = self.pool[self.id]
+            sandbox = self.local_pool[self.id] if self.id in self.local_pool else self.pool[self.id]
             if clone == True:
                 return dict(sandbox)
+            if sandbox != None:
+                self.local_pool[self.id] = sandbox
             return sandbox
         except:
             return None
@@ -113,11 +118,11 @@ class Sandbox:
         return item["sandbox"]
 
     def get_host(self) -> str | None:
-        item = self.get()
-        if item == None:
+        sandbox = self.request()
+        if sandbox == None:
             return None
 
-        return item["host"]
+        return sandbox["host"]
 
     def delete(self) -> bool:
         try:
@@ -180,10 +185,22 @@ class Sandbox:
         return (min * 60 * 1000).__round__()
 
 print("Started")
-test = Sandbox({"id": "123"})
 
+test = Sandbox({"id": "123"}, pool, creation_pool)
+
+start = time.time()
 box_item = test.request(lambda x: print(x))
 
 print(test.ago(box_item["created_at"]))
-
 print(test.state())
+
+req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
+print(req.json())
+print(time.time() - start)
+
+start = time.time()
+req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
+print(req.json())
+print(time.time() - start)
+
+print(box_item["host"])

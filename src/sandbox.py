@@ -1,5 +1,5 @@
 import modal
-from typing import TypedDict, Dict, List, Callable, Any, Optional
+from typing import TypedDict, Dict, List, Callable, Any, Optional, Literal
 from datetime import datetime, timezone, timedelta
 from keox import Keox
 import time
@@ -13,62 +13,104 @@ class SandBoxItem(TypedDict):
     created_at: str
     expires_at: str
     latest_request: str | None
+    sandbox: modal.Sandbox
 
 class Sandbox:
     pool: Dict[str, SandBoxItem]
+    creation_state: Dict[str, bool]
     id: str
     api: dict
     keox: Keox
 
     def __init__(self, api: dict, pool: Optional[modal.Dict] = None):
         self.pool = pool if pool != None else modal.Dict.from_name("sandbox-pool", create_if_missing=True)
+        self.creation_state = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
         self.id = api["id"]
         self.api = api
         self.keox = Keox(self.api)
 
-    def create(self, onlog: Callable[[str], Any]) -> modal.Sandbox | None:
+    def create(self, onlog: Callable[[str], Any]) -> SandBoxItem | None:
         try:
+            if self.creation_state[self.id] == True:
+                print("Waiting for container to warm up...")
+                while self.creation_state[self.id] == True:
+                    time.sleep(0.1)
+                return self.get()
+
+            self.creation_state[self.id] = True
+
+            timeout = self.api["timeout"] if "timeout" in self.api else 120
+            self.api["timeout"] = timeout
+
+            current = self.get_sandbox(clone=True)
+
             [sandbox, host] = self.keox.build_sandbox(onlog)
 
             req  = requests.get(f"{host}/api/hi", headers={"path": "/api/hi"})
             print(req.json())
 
-            # sandbox.terminate()
-            # print(sandbox.poll())
+            timing = self.generate_timing(timeout*1000)
+            item: SandBoxItem = {
+                "id": sandbox.object_id,
+                "host": host,
+                "created_at": timing[0],
+                "expires_at": timing[1],
+                "latest_request": None,
+                "sandbox": sandbox
+            }
 
-            return sandbox
+            self.pool[self.id] = item
+
+            if current != None:
+                try:
+                    current.terminate()
+                except:
+                    pass
+
+            self.creation_state[self.id] = False
+            return item
+        except modal.exception.FunctionTimeoutError:
+            print("Timed out")
+            self.creation_state[self.id] = False
+            return None
         except:
+            self.creation_state[self.id] = False
             return None
 
-    def request(self, onlog: Callable[[str], Any]):
+    def request(self, onlog: Callable[[str], Any]) -> SandBoxItem | None:
         sandbox = self.get()
-        if sandbox != None and self.verify_timing(sandbox):
-            return modal.Sandbox.from_id(sandbox["id"])
+        if sandbox != None and self.verify_timing(sandbox) == True:
+            return sandbox
 
-        sandbox = self.create(onlog)
-        return sandbox
+        return self.create(onlog)
 
     def verify_timing(self, sandbox: SandBoxItem):
-        created_at = self.read_iso(sandbox["created_at"])
-        expires_at = self.read_iso(sandbox["expires_at"])
+        [created_at, expires_at] = [sandbox["created_at"], sandbox["expires_at"]]
 
-        if expires_at - self.min_to_ms(1) < datetime.now(timezone.utc):
+        if self.future(expires_at) < self.min_to_ms(0.3):
+            print("Container expired")
             return False
 
         return True
 
-    def get(self) -> SandBoxItem | None:
+    def get(self, clone: bool = False) -> SandBoxItem | None:
         try:
-            return self.pool[self.id]
+            sandbox = self.pool[self.id]
+            if clone == True:
+                return dict(sandbox)
+            return sandbox
         except:
             return None
 
-    def get_sandbox(self) -> modal.Sandbox | None:
+    def get_sandbox(self, clone: bool = False) -> modal.Sandbox | None:
         item = self.get()
         if item == None:
             return None
 
-        return modal.Sandbox.from_id(item["id"])
+        if clone == True:
+            return modal.Sandbox.from_id(item["id"])
+
+        return item["sandbox"]
 
     def get_host(self) -> str | None:
         item = self.get()
@@ -87,6 +129,7 @@ class Sandbox:
 
     def terminate(self) -> bool:
         sandbox = self.get_sandbox()
+
         if sandbox == None:
             return False
 
@@ -94,6 +137,23 @@ class Sandbox:
             sandbox.terminate()
 
         return True
+
+    def state(self) -> str:
+        sandbox = self.get_sandbox()
+
+        if sandbox == None:
+            return "idle"
+
+        if sandbox.poll() == None:
+            return "running"
+
+        return "idle"
+
+    def creation_state(self) -> bool:
+        try:
+            return self.creation_state[self.id]
+        except:
+            return False
 
     def generate_timing(self, ms: int) -> List[str]:
         created_at = datetime.now(timezone.utc)
@@ -119,14 +179,11 @@ class Sandbox:
     def min_to_ms(self, min: int | float) -> int:
         return (min * 60 * 1000).__round__()
 
-
+print("Started")
 test = Sandbox({"id": "123"})
-timing = test.generate_timing(30000)
 
-time.sleep(1)
+box_item = test.request(lambda x: print(x))
 
-print("ago", (test.ago(timing[0]) / 1000).__round__())
-print("future", (test.future(timing[1]) / 1000).__round__())
-print("min_to_ms", test.min_to_ms(1.5))
+print(test.ago(box_item["created_at"]))
 
-print(test.pool)
+print(test.state())

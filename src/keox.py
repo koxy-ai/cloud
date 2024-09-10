@@ -33,19 +33,27 @@ class Keox:
         startAt = time.time()
         api = self.api
 
-        onlog(f"Compiling sandbox image...")
+        onlog(f"Compiling container image...")
         image = self.build_image(onlog, force)
         vol = modal.Volume.from_name(f"vol-{api['id']}", create_if_missing=True)
 
-        onlog(f"Building image & warming up new sandbox...")
+        onlog(f"Building image & warming up new container...")
 
-        cpu = api["cpu"] if "cpu" in api else 1
+        cpu = api["cpu"] if "cpu" in api else None
         gpu = self.read_gpu()
 
-        memory_request = api["memory"] if "memory" in api else 1024
-        memory_limit = api["memory_limit"] if "memory_limit" in api else 2048
+        memory_request = api["memory"] if "memory" in api else None
+        memory_limit = api["memory_limit"] if "memory_limit" in api else None
+        memory = (memory_request, memory_limit) if isinstance(memory_request, int) and isinstance(memory_limit, int) else None
 
+        timeout = api["timeout"] if "timeout" in api else 15
         autoscale = api["autoscale"] if "autoscale" in api else False
+
+        onlog(f"[OPTION]: Timeout: {timeout}s")
+        onlog(f"[OPTION]: vCPU: {(cpu or 1)*2} cores")
+        onlog(f"[OPTION]: Memory: {memory_request}MB - {memory_limit}MB")
+        onlog(f"[OPTION]: GPU: {gpu}")
+        onlog(f"[OPTION]: Autoscale: {autoscale}")
 
         build_command = [ f"{self.deno} run --allow-all /koxy/main.ts" ]
 
@@ -56,24 +64,22 @@ class Keox:
                 " && ".join(build_command)
             ],
             image=image,
-            timeout=15,
+            timeout=timeout,
             encrypted_ports=[9009],
             cpu=cpu if autoscale == False else None,
-            memory=(memory_request, memory_limit) if autoscale == False else None,
-            # volumes={"/koxy": vol}
-            # gpu=modal.gpu.T4(count=1),
+            memory=memory if autoscale == False else None,
             gpu=gpu
         )
 
         tunnel_start = time.time()
         tunnel = sandbox.tunnels()[0]
         host = f"https://{tunnel.host}"
-        print(f"Tunnel took {str(time.time() - tunnel_start)[:4]}s")
+        print(f"Connected HTTPS tunnel in {str(time.time() - tunnel_start)[:4]}s")
 
         for line in sandbox.stdout:
             if str.startswith(str.lower(line), "listening"):
                 took = time.time() - startAt
-                print(f"Warmed sandbox in {str(took)[:4]}s")
+                print(f"Warmed container in {str(took)[:4]}s")
                 onlog(line)
                 break
             onlog(line)

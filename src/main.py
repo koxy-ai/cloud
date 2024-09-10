@@ -31,13 +31,15 @@ class Sandbox:
     def create(self, api: str, onlog):
         startAt = time.time()
 
-        sb = modal.Sandbox.create(
-            *["bash", "-c", f"echo {api} > /source/api.json && python /source/src/builder.py source=/source/heart path=/koxy && /root/.deno/bin/deno run --allow-all /koxy/main.ts"],
-            image=image,
-            timeout=15,
-            encrypted_ports=[9009],
-            # gpu=modal.gpu.T4(count=1),
-        )
+        # sb = modal.Sandbox.create(
+        #     *["bash", "-c", f"echo {api} > /source/api.json && python /source/src/builder.py source=/source/heart path=/koxy && /root/.deno/bin/deno run --allow-all /koxy/main.ts"],
+        #     image=image,
+        #     timeout=15,
+        #     encrypted_ports=[9009],
+        #     # gpu=modal.gpu.T4(count=1),
+        # )
+
+        sb = keox.build_sandbox(api)
 
         took = time.time() - startAt
         print(f"created in {took}")
@@ -105,7 +107,7 @@ with open("./src/api.json", "r") as f:
     content = json.dumps(f.read())
     sandbox = Sandbox("123")
     sandbox.create(
-        shlex.quote(content), onlog
+        content, onlog
     )
 
 # sb = modal.Sandbox.from_id("sb-HTuc0F7q9PUuEcz4TqN8ik")

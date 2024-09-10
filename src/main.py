@@ -6,6 +6,7 @@ from keox import Keox
 import time
 import json
 import shlex
+import requests
 
 class SandBoxItem(TypedDict):
     id: str
@@ -27,24 +28,37 @@ class Sandbox:
         self.pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
         self.id = id
 
-    def create(self, api: str):
+    def create(self, api: str, onlog):
         startAt = time.time()
 
         sb = modal.Sandbox.create(
-            *["bash", "-c", f"chmod +x /source/deno.sh && /source/deno.sh && echo {api} > /source/api.json && cat /source/api.json && /root/.deno/deno/bin run --allow-all /source/heart/main.ts"],
+            *["bash", "-c", f"echo {api} > /source/api.json && python /source/src/builder.py source=/source/heart path=/koxy && /root/.deno/bin/deno run --allow-all /koxy/main.ts"],
             image=image,
-            timeout=10,
+            timeout=15,
             encrypted_ports=[9009],
             # gpu=modal.gpu.T4(count=1),
         )
 
         took = time.time() - startAt
         print(f"created in {took}")
+        startAt = time.time()
 
-        for line in sb.stderr:
-            print(line)
+        tunnel = sb.tunnels()[0]
+        host = f"https://{tunnel.host}"
 
-        # sb.wait()
+        for line in sb.stdout:
+            onlog(line)
+            if str.startswith(str.lower(line), "listening"):
+                took = time.time() - startAt
+                print(f"done in {took}")
+                break
+
+        print("READY")
+
+        req  = requests.get(f"{host}/api/hi", headers={"path": "/api/hi"})
+        print(req.text)        
+
+        sb.terminate()
         return
 
         # pull = sb.exec("bash", "-c", "cd /source && git pull")
@@ -56,17 +70,6 @@ class Sandbox:
         #     print(line)
 
         # pull.wait()
-
-        # took = time.time() - startAt
-        # print(f"done in {took}")
-
-        for line in sb.stdout:
-            if str.startswith(line, "READY"):
-                took = time.time() - startAt
-                print(f"done in {took}")
-                break
-
-            print(line)
 
         pass
 
@@ -95,13 +98,14 @@ class Sandbox:
 
         return [created_at_iso, expiration_time_iso]
 
+def onlog(line):
+    print(line)
+
 with open("./src/api.json", "r") as f:
     content = json.dumps(f.read())
     sandbox = Sandbox("123")
     sandbox.create(
-        shlex.quote(
-            content
-        )
+        shlex.quote(content), onlog
     )
 
 # sb = modal.Sandbox.from_id("sb-HTuc0F7q9PUuEcz4TqN8ik")

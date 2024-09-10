@@ -11,7 +11,7 @@ class Keox:
             .apt_install("curl")
             .apt_install("unzip")
             .run_commands(
-                # "curl -fsSL https://deno.land/x/install/install.sh | sh",
+                "curl -fsSL https://deno.land/install.sh | sh",
                 "git clone https://github.com/koxy-ai/cloud /source",
                 "echo 'READY NOW'"
             )

@@ -48,9 +48,9 @@ class Sandbox:
         self.creation_state = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
         self.apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
 
-    def create(self, onlog: Callable[[str], Any]) -> SandBoxItem | None:
+    def create(self, onlog: Callable[[str], Any], force_rebuild: bool = False) -> SandBoxItem | None:
         try:
-            if self.id in self.creation_state and self.creation_state[self.id] == True:
+            if force_rebuild != True and self.id in self.creation_state and self.creation_state[self.id] == True:
                 print("Waiting for container to warm up...")
                 total: float = 0.0;
 
@@ -76,11 +76,10 @@ class Sandbox:
             self.api["timeout"] = timeout
 
             if self.id in self.local_pool:
-                    del self.local_pool[self.id]
+                del self.local_pool[self.id]
 
             current = self.get(clone=True)
-
-            [sandbox, host] = self.keox.build_sandbox(onlog)
+            [sandbox, host] = self.keox.build_sandbox(onlog, force_rebuild)
 
             timing = self.generate_timing(timeout*1000)
             item: SandBoxItem = {
@@ -112,13 +111,14 @@ class Sandbox:
             self.creation_state[self.id] = False
             return None
 
-    def request(self, onlog: Callable[[str], Any]) -> SandBoxItem | None:
+    def request(self, onlog: Callable[[str], Any], force_rebuild: bool = False) -> SandBoxItem | None:
         self.update_pools()
 
-        sandbox = self.get()
-        if sandbox != None and self.verify_timing(sandbox) == True:
-            self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
-            return sandbox
+        if force_rebuild != True:
+            sandbox = self.get()
+            if sandbox != None and self.verify_timing(sandbox) == True:
+                self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
+                return sandbox
 
         created = self.create(onlog)
         if created == None:
@@ -131,7 +131,6 @@ class Sandbox:
         [created_at, expires_at] = [sandbox["created_at"], sandbox["expires_at"]]
 
         if future(expires_at) < min_to_ms(0.3):
-            print("Container expired")
             return False
 
         return True
@@ -183,10 +182,11 @@ class Sandbox:
         if sandbox == None:
             return False
 
-        if sandbox.poll() == None:
+        try:
             sandbox.terminate()
-
-        return True
+            return True
+        except:
+            return True
 
     def state(self) -> str:
         sandbox = self.get_sandbox()

@@ -3,13 +3,16 @@ import json
 import shlex
 import time
 from typing import Callable, Any
+from version import version
 
 class Keox:
     api: dict
+    version: str
     deno: str = "/root/.deno/bin/deno"
 
-    def __init__(self, api: dict):
+    def __init__(self, api: dict, version: str):
         self.api = api
+        self.version = version
         pass
 
     def build_image(self, onlog: Callable[[str], Any], force: bool = False):
@@ -23,7 +26,7 @@ class Keox:
                 "git clone https://github.com/koxy-ai/cloud /source",
                 f"echo {shlex.quote(json.dumps(self.api))} > /source/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
-                "echo 'READY NOW'"
+                f"echo 'Built image version: {version()}'"
             )
         )
 
@@ -71,12 +74,13 @@ class Keox:
             gpu=gpu,
         )
 
-        onlog(f"Built container in {str(time.time() - startAt)[:4]}s")
+        onlog(f"Built container: {sandbox.object_id}")
 
         tunnel_start = time.time()
         tunnel = sandbox.tunnels()[0]
         host = f"https://{tunnel.host}"
         onlog(f"Connected HTTPS tunnel in {str(time.time() - tunnel_start)[:4]}s")
+        startAt = time.time()
 
         for line in sandbox.stdout:
             if str.startswith(str.lower(line), "listening"):

@@ -22,6 +22,7 @@ class Keox:
             .run_commands(
                 "curl -fsSL https://deno.land/install.sh | sh -s v1.38.2",
                 "git clone https://github.com/koxy-ai/cloud /source",
+                # TODO: Update this to be /source/src/ once ready to have deployed APIs:
                 f"echo {shlex.quote(json.dumps(self.api))} > /source/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
                 f"echo 'Built image version: {version()}'"

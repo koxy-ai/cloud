@@ -1,0 +1,1 @@
+export async function main(koxy: any, inputs: any) { console.log("node1", inputs); return "Hi"; }

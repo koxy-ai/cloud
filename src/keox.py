@@ -7,12 +7,10 @@ from version import version
 
 class Keox:
     api: dict
-    version: str
     deno: str = "/root/.deno/bin/deno"
 
-    def __init__(self, api: dict, version: str):
+    def __init__(self, api: dict):
         self.api = api
-        self.version = version
         pass
 
     def build_image(self, onlog: Callable[[str], Any], force: bool = False):

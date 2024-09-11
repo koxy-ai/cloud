@@ -17,10 +17,6 @@ class SandBoxItem(TypedDict):
     sandbox: modal.Sandbox
     requests: List[str]
 
-pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
-creation_pool = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
-apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
-
 class Sandbox:
     pool: Dict[str, SandBoxItem]
     local_pool: Dict[str, SandBoxItem]
@@ -31,15 +27,22 @@ class Sandbox:
 
     def __init__(
         self, 
-        api: dict, 
+        api: dict | str,
         local_pool: Dict[str, SandBoxItem] = {},
     ):
+        self.update_pools()
+        self.local_pool = local_pool
+
+        if type(api) == str:
+            api = self.apis_pool[api]
+
+        if api == None:
+            raise Exception("API not found")
+
         self.id = api["id"]
         self.api = api
         self.keox = Keox(self.api)
 
-        self.update_pools()
-        self.local_pool = local_pool
         self.apis_pool[self.id] = self.api
         pass
 
@@ -48,9 +51,9 @@ class Sandbox:
         self.creation_state = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
         self.apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
 
-    def create(self, onlog: Callable[[str], Any], force_rebuild: bool = False) -> SandBoxItem | None:
+    def create(self, onlog: Callable[[str], Any], force_rebuild: bool = False, skip:bool = False) -> SandBoxItem | None:
         try:
-            if force_rebuild != True and self.id in self.creation_state and self.creation_state[self.id] == True:
+            if force_rebuild != True and skip != True and self.id in self.creation_state and self.creation_state[self.id] == True:
                 print("Waiting for container to warm up...")
                 total: float = 0.0;
 
@@ -65,11 +68,10 @@ class Sandbox:
                     total += 0.1
 
                 current = self.get(True)
-                print("current", current, self.verify_timing(current))
                 if current != None and self.verify_timing(current) == True:
                     return current
 
-                return current
+                return self.create(onlog, skip=True)
 
             self.creation_state[self.id] = True
             timeout = self.api["timeout"] if "timeout" in self.api else 120
@@ -231,6 +233,11 @@ print(time.time() - start)
 start = time.time()
 req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
 print(req.json())
+print(time.time() - start)
+
+start = time.time()
+req  = requests.get(f"{box_item['host']}", headers={"KOXY-GET-REQUESTS": "yes"})
+print(req.text())
 print(time.time() - start)
 
 print(box_item["host"])

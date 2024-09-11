@@ -23,7 +23,7 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     if (request.headers.get("KOXY-GET-REQUESTS")) {
-      return new Response(String(requests), {
+      return new Response(JSON.stringify({ requests }), {
         status: 200,
         headers: { "koxy-response": "true" },
       });

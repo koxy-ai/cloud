@@ -1,4 +1,5 @@
 import { Koxy } from "./src/koxy.ts";
+import { cpus } from "node:os";
 
 let api: any = "// <KOXY_API>";
 
@@ -10,7 +11,22 @@ if (typeof api === "string") {
   }
 }
 
+let initStart: number = Date.now();
 let requests: number = 0;
+
+// Function to calculate CPU usage in Deno
+async function printCpuUsage() {
+  let numCpus = cpus().length;
+  let numCpusUtilized = Deno.loadavg()[2]; // or use [1] for 5 minute average, or [2] for 15 minute average
+  let cpuUtilizationRatio = numCpusUtilized / numCpus; // is a value between 0 and 1
+  console.log(`CPU Utilization: ${cpuUtilizationRatio * 100}%`);
+  console.log(`Number of CPU utilized: ${numCpusUtilized}`);
+
+  return numCpusUtilized;
+}
+
+// Print CPU usage every 10 seconds
+// setInterval(printCpuUsage, 10000);
 
 const handler = async (request: Request): Promise<Response> => {
   try {
@@ -27,6 +43,16 @@ const handler = async (request: Request): Promise<Response> => {
         status: 200,
         headers: { "koxy-response": "true" },
       });
+    }
+
+    if (request.headers.get("KOXY-STATS")) {
+      return new Response(
+        JSON.stringify({ requests, cpu: Deno.loadavg()[2] }),
+        {
+          status: 200,
+          headers: { "koxy-response": "true" },
+        },
+      );
     }
 
     requests++;

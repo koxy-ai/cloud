@@ -7,6 +7,7 @@ import json
 import shlex
 import requests
 from timing import min_to_ms, future, ago, read_iso
+from version import version
 
 class SandBoxItem(TypedDict):
     id: str
@@ -16,6 +17,7 @@ class SandBoxItem(TypedDict):
     latest_request: str | None
     sandbox: modal.Sandbox
     requests: List[str]
+    version: str
 
 class Sandbox:
     pool: Dict[str, SandBoxItem]
@@ -90,13 +92,16 @@ class Sandbox:
                 "created_at": timing[0],
                 "expires_at": timing[1],
                 "sandbox": sandbox,
+                "version": version(),
                 "requests": current["requests"] if current and "requests" in current != None else []
             }
 
             self.pool[self.id] = item
             # self.local_pool[self.id] = item
 
-            if current != None:
+            keep_awake = self.api["keep_awake"] if "keep_awake" in self.api else False
+
+            if current != None and keep_awake != True:
                 try:
                     current = modal.Sandbox.from_id(current["id"])
                     current.terminate()
@@ -118,7 +123,7 @@ class Sandbox:
 
         if force_rebuild != True:
             sandbox = self.get()
-            if sandbox != None and self.verify_timing(sandbox) == True:
+            if sandbox != None and self.verify_sandbox(sandbox) == True:
                 self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
                 return sandbox
 
@@ -128,6 +133,16 @@ class Sandbox:
 
         self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
         return created
+
+    def verify_sandbox(self, sandbox: SandBoxItem):
+        timing = self.verify_timing(sandbox=sandbox)
+        if timing == False:
+            return False
+
+        if sandbox["version"] != version():
+            return False
+
+        return True
 
     def verify_timing(self, sandbox: SandBoxItem):
         [created_at, expires_at] = [sandbox["created_at"], sandbox["expires_at"]]
@@ -216,28 +231,29 @@ class Sandbox:
 
         return [created_at_iso, expiration_time_iso]
 
-print("Started")
+if __name__ == "__main__":
+    print("Started")
 
-test = Sandbox({"id": "12345"}, {})
+    test = Sandbox({"id": "12345"}, {})
 
-start = time.time()
-box_item = test.request(lambda x: print(x))
+    start = time.time()
+    box_item = test.request(lambda x: print(x))
 
-print(ago(box_item["created_at"]))
-# print(test.state())
+    print(ago(box_item["created_at"]))
+    # print(test.state())
 
-req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
-print(req.json())
-print(time.time() - start)
+    req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
+    print(req.json())
+    print(time.time() - start)
 
-start = time.time()
-req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
-print(req.json())
-print(time.time() - start)
+    start = time.time()
+    req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
+    print(req.json())
+    print(time.time() - start)
 
-start = time.time()
-req  = requests.get(f"{box_item['host']}", headers={"KOXY-GET-REQUESTS": "yes"})
-print(req.text())
-print(time.time() - start)
+    start = time.time()
+    req  = requests.get(f"{box_item['host']}", headers={"KOXY-GET-REQUESTS": "yes"})
+    print(req.json())
+    print(time.time() - start)
 
-print(box_item["host"])
+    print(box_item["host"])

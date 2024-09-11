@@ -40,7 +40,7 @@ class Keox:
 
         onlog(f"Building image & warming up new container...")
 
-        cpu = api["cpu"] if "cpu" in api else 0.5
+        cpu = api["cpu"] if "cpu" in api else None
         gpu = self.read_gpu()
 
         memory_request = api["memory"] if "memory" in api else 1024
@@ -96,7 +96,7 @@ class Keox:
         if gpu == None:
             return None
 
-        count = gpu["count"] if "count" in gpu else 1
+        count = gpu["count"] if "count" in gpu else 0.125
         type = gpu["type"] if "type" in gpu else "T4"
 
         if type == "T4":

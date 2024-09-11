@@ -32,9 +32,10 @@ def manager():
         try:
             req = requests.get(
                 sandbox["host"],
-                headers={"KOXY-GET-REQUESTS": f"yes"}
+                headers={"KOXY-STATS": f"yes"}
             )
             req = req.json()
+            print(req)
         except:
             # del sandboxes_pool[key] # enable in production
             print("Sandbox is idle")

@@ -46,8 +46,9 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     if (request.headers.get("KOXY-STATS")) {
+      const load = Deno.loadavg()
       return new Response(
-        JSON.stringify({ requests, cpu: Deno.loadavg()[2] }),
+        JSON.stringify({ requests, cpu: load[2] || load[1] || load[0] }),
         {
           status: 200,
           headers: { "koxy-response": "true" },

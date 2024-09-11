@@ -46,9 +46,9 @@ def manager():
 
         created_at = read_iso(sandbox["created_at"])
         expires_at = read_iso(sandbox["expires_at"])
-        expires_in = (expires_at - datetime.now(timezone.utc)).total_seconds()
+        expires_in = (expires_at - datetime.now(timezone.utc)).total_seconds() - 20
         created_in = (datetime.now(timezone.utc) - created_at).total_seconds()
-        timeout = (expires_at - created_at).total_seconds()
+        timeout = (expires_at - created_at).total_seconds() - 20
         expire_per = (created_in * 100) / timeout
 
         req_num = req["requests"] if "requests" in req else 0

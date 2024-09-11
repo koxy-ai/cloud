@@ -1,5 +1,5 @@
 import { Koxy } from "./src/koxy.ts";
-import { cpus } from "node:os";
+import * as os from "https://deno.land/std@0.123.0/node/os.ts";
 
 let api: any = {"id": "324", "env": {"TOKEN1": "VALUE1", "TOKEN2": "VALUE2"}, "flows": {"/api/hi": [{"id": "1", "name": "1", "method": "GET", "history": [], "dependecies": [], "start": {"type": "start", "id": "start", "name": "start", "label": "start", "icon": "start", "description": "start", "code": "start", "inputs": [], "next": "node1"}, "end": {"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}, "nodes": [{"type": "normal", "id": "node1id", "name": "node1", "label": "Node", "description": "", "icon": "", "next": "node2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) { console.log(\"node1\", inputs); return \"Hi\"; }"}, {"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {console.log(\"node2\", inputs)}"}, {"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}]}]}};
 
@@ -16,8 +16,8 @@ let requests: number = 0;
 
 // Function to calculate CPU usage in Deno
 async function printCpuUsage() {
-  console.log(cpus())
-  let numCpus = cpus().length;
+  console.log(os.cpus())
+  let numCpus = os.cpus().length;
   let numCpusUtilized = Deno.loadavg()[2]; // or use [1] for 5 minute average, or [2] for 15 minute average
   let cpuUtilizationRatio = numCpusUtilized / numCpus; // is a value between 0 and 1
   console.log(`CPU Utilization: ${cpuUtilizationRatio * 100}%`);
@@ -47,9 +47,9 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     if (request.headers.get("KOXY-STATS")) {
-      const load = Deno.loadavg()
+      const load = os.loadavg()
       return new Response(
-        JSON.stringify({ requests, cpu: load[2] || load[1] || load[0] }),
+        JSON.stringify({ requests, load: load[2] || load[1] || load[0], cpu: os.cpus().length }),
         {
           status: 200,
           headers: { "koxy-response": "true" },

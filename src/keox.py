@@ -33,7 +33,7 @@ class Keox:
         return image
 
     def build_sandbox(self, onlog: Callable[[str], Any], force: bool = False):
-        startAt = time.time()
+        start_at = time.time()
         api = self.api
 
         onlog(f"Compiling container image...")
@@ -80,11 +80,11 @@ class Keox:
         tunnel = sandbox.tunnels()[0]
         host = f"https://{tunnel.host}"
         onlog(f"Connected HTTPS tunnel in {str(time.time() - tunnel_start)[:4]}s")
-        startAt = time.time()
+        start_at = time.time()
 
         for line in sandbox.stdout:
             if str.startswith(str.lower(line), "listening"):
-                took = time.time() - startAt
+                took = time.time() - start_at
                 print(f"Warmed container in {str(took)[:4]}s")
                 onlog(line)
                 break

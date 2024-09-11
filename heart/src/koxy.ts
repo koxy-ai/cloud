@@ -35,7 +35,7 @@ export class Koxy {
     this.body = body;
   }
 
-  async run(path: string, method: string): Promise<{ status: number; body?: any }> {
+  async run(path: string, method: string): Promise<{ status: number; body?: any, headers?: Record<string, string> }> {
     try {
       this.runner = new Runner(path, method, this);
       return await this.runner.runLoop();
@@ -44,7 +44,8 @@ export class Koxy {
         status: 500,
         body: {
           success: false,
-          message: err.message || "Unexpected error running flow"
+          message: err.message || "Unexpected error running flow",
+          headers: {}
         }
       };
     }

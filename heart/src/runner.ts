@@ -170,6 +170,7 @@ export class Runner {
   async runLoop(): Promise<{
     status: number;
     body?: any;
+    headers?: Record<string, string>;
   }> {
     if (this.flow.start.type !== "start") {
       this.koxy.logger.error(`Flow ${this.path} has no start node`);
@@ -190,7 +191,7 @@ export class Runner {
 
     if (res?.type === "return") {
       this.koxy.logger.info(`Flow ${this.path} returned`);
-      return { status: res.res.status ?? 200, body: res.res };
+      return { status: res.res.status ?? 200, body: res.res, headers: res.res.headers };
     }
 
     this.koxy.logger.info(`Flow ${this.path} finished with no response`);

@@ -6,6 +6,7 @@ import time
 import json
 import shlex
 import requests
+from timing import min_to_ms, future, ago, read_iso
 
 class SandBoxItem(TypedDict):
     id: str
@@ -14,9 +15,11 @@ class SandBoxItem(TypedDict):
     expires_at: str
     latest_request: str | None
     sandbox: modal.Sandbox
+    requests: List[str]
 
 pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
 creation_pool = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
+apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
 
 class Sandbox:
     pool: Dict[str, SandBoxItem]
@@ -26,28 +29,56 @@ class Sandbox:
     api: dict
     keox: Keox
 
-    def __init__(self, api: dict, pool: modal.Dict, creation_pool: modal.Dict, local_pool: Dict[str, SandBoxItem] = {}):
+    def __init__(
+        self, 
+        api: dict, 
+        local_pool: Dict[str, SandBoxItem] = {},
+    ):
         self.id = api["id"]
         self.api = api
         self.keox = Keox(self.api)
-        self.pool = pool
-        self.creation_state = creation_pool
+
+        self.update_pools()
         self.local_pool = local_pool
+        self.apis_pool[self.id] = self.api
+        pass
+
+    def update_pools(self):
+        self.pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
+        self.creation_state = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
+        self.apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
 
     def create(self, onlog: Callable[[str], Any]) -> SandBoxItem | None:
         try:
-            if self.creation_state[self.id] == True:
+            if self.id in self.creation_state and self.creation_state[self.id] == True:
                 print("Waiting for container to warm up...")
+                total: float = 0.0;
+
                 while self.creation_state[self.id] == True:
+                    if total > 12:
+                        print("Timed out waiting for container to warm up, warming up new one!")
+                        self.creation_state[self.id] = False
+                        total = 100
+                        return self.create(onlog)
+
                     time.sleep(0.1)
-                return self.get()
+                    total += 0.1
+
+                current = self.get(True)
+                print("current", current, self.verify_timing(current))
+                if current != None and self.verify_timing(current) == True:
+                    return current
+
+                return current
 
             self.creation_state[self.id] = True
-
             timeout = self.api["timeout"] if "timeout" in self.api else 120
             self.api["timeout"] = timeout
 
-            current = self.get_sandbox(clone=True)
+            if self.id in self.local_pool:
+                    del self.local_pool[self.id]
+
+            current = self.get(clone=True)
 
             [sandbox, host] = self.keox.build_sandbox(onlog)
 
@@ -57,15 +88,16 @@ class Sandbox:
                 "host": host,
                 "created_at": timing[0],
                 "expires_at": timing[1],
-                "latest_request": None,
-                "sandbox": sandbox
+                "sandbox": sandbox,
+                "requests": current["requests"] if current and "requests" in current != None else []
             }
 
             self.pool[self.id] = item
-            self.local_pool[self.id] = item
+            # self.local_pool[self.id] = item
 
             if current != None:
                 try:
+                    current = modal.Sandbox.from_id(current["id"])
                     current.terminate()
                 except:
                     pass
@@ -81,16 +113,24 @@ class Sandbox:
             return None
 
     def request(self, onlog: Callable[[str], Any]) -> SandBoxItem | None:
+        self.update_pools()
+
         sandbox = self.get()
         if sandbox != None and self.verify_timing(sandbox) == True:
+            self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
             return sandbox
 
-        return self.create(onlog)
+        created = self.create(onlog)
+        if created == None:
+            return None
+
+        self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
+        return created
 
     def verify_timing(self, sandbox: SandBoxItem):
         [created_at, expires_at] = [sandbox["created_at"], sandbox["expires_at"]]
 
-        if self.future(expires_at) < self.min_to_ms(0.3):
+        if future(expires_at) < min_to_ms(0.3):
             print("Container expired")
             return False
 
@@ -98,11 +138,9 @@ class Sandbox:
 
     def get(self, clone: bool = False) -> SandBoxItem | None:
         try:
-            sandbox = self.local_pool[self.id] if self.id in self.local_pool else self.pool[self.id]
+            sandbox = self.pool[self.id]
             if clone == True:
                 return dict(sandbox)
-            if sandbox != None:
-                self.local_pool[self.id] = sandbox
             return sandbox
         except:
             return None
@@ -117,12 +155,19 @@ class Sandbox:
 
         return item["sandbox"]
 
-    def get_host(self) -> str | None:
-        sandbox = self.request()
+    def get_host(self, onlog: Callable[[str], Any] | None = None, sandbox: modal.Sandbox | None = None) -> str | None:
+        sandbox = sandbox if sandbox != None else self.request(onlog=onlog if onlog != None else lambda x: print(x))
         if sandbox == None:
             return None
 
         return sandbox["host"]
+
+    def get_connection(self, onlog: Callable[[str], Any] | None = None, sandbox: modal.Sandbox | None = None) -> List[str] | None:
+        sandbox = sandbox if sandbox != None else self.request(onlog=onlog if onlog != None else lambda x: print(x))
+        if sandbox == None:
+            return None
+
+        return [self.get_host(), sandbox["expires_at"]]
 
     def delete(self) -> bool:
         try:
@@ -169,30 +214,15 @@ class Sandbox:
 
         return [created_at_iso, expiration_time_iso]
 
-    def read_iso(self, iso: str) -> datetime:
-        return datetime.fromisoformat(iso)
-
-    def now(self) -> int:
-        return datetime.now(timezone.utc).timestamp() * 1000
-
-    def ago(self, iso: str) -> int:
-        return (datetime.now(timezone.utc) - self.read_iso(iso)).total_seconds() * 1000
-
-    def future(self, iso: str) -> int:
-        return (self.read_iso(iso) - datetime.now(timezone.utc)).total_seconds() * 1000
-
-    def min_to_ms(self, min: int | float) -> int:
-        return (min * 60 * 1000).__round__()
-
 print("Started")
 
-test = Sandbox({"id": "123"}, pool, creation_pool)
+test = Sandbox({"id": "12345"}, {})
 
 start = time.time()
 box_item = test.request(lambda x: print(x))
 
-print(test.ago(box_item["created_at"]))
-print(test.state())
+print(ago(box_item["created_at"]))
+# print(test.state())
 
 req  = requests.get(f"{box_item['host']}/api/hi", headers={"path": "/api/hi"})
 print(req.json())

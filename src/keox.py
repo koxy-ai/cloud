@@ -39,7 +39,7 @@ class Keox:
 
         onlog(f"Building image & warming up new container...")
 
-        cpu = api["cpu"] if "cpu" in api else None
+        cpu = api["cpu"] if "cpu" in api else 0.5
         gpu = self.read_gpu()
 
         memory_request = api["memory"] if "memory" in api else 1024
@@ -71,10 +71,12 @@ class Keox:
             gpu=gpu,
         )
 
+        onlog(f"Built container in {str(time.time() - startAt)[:4]}s")
+
         tunnel_start = time.time()
         tunnel = sandbox.tunnels()[0]
         host = f"https://{tunnel.host}"
-        print(f"Connected HTTPS tunnel in {str(time.time() - tunnel_start)[:4]}s")
+        onlog(f"Connected HTTPS tunnel in {str(time.time() - tunnel_start)[:4]}s")
 
         for line in sandbox.stdout:
             if str.startswith(str.lower(line), "listening"):

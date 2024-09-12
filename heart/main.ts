@@ -3,7 +3,6 @@ import pidusage from "npm:pidusage";
 import os from "node:os";
 
 const cpus = os.cpus().length;
-
 let api: any = "// <KOXY_API>";
 
 if (typeof api === "string") {
@@ -63,8 +62,8 @@ const handler = async (request: Request): Promise<Response> => {
           usage,
           processing,
           errors,
-          cpus: os.cpus().length,
-          idle
+          cpus,
+          idle,
         }),
         {
           status: 200,

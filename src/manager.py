@@ -66,6 +66,7 @@ def manager():
 
             if traffic == False or keep_warm != True:
                 print(f"container {key} will die soon")
+                terminate_next[key] = sandbox
                 return
 
             print("warming up new container")

@@ -15,7 +15,7 @@ if (typeof api === "string") {
 }
 
 let requests: number = 0;
-let totalUsage: any = "";
+let totalUsage: number = 0;
 let errors: string[] = [];
 
 // Function to calculate CPU usage
@@ -64,7 +64,7 @@ async function getCPUUsage() {
   
     console.log(lines);
     // usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
-    totalUsage = lines;
+    // totalUsage = lines;
   } catch (err: any) {
     console.error(`Error getting CPU usage: ${err.message}`);
     errors.push(err.message);
@@ -88,9 +88,11 @@ async function captureUsage() {
   }
 }
 
-setTimeout(captureUsage, 1000);
+// setTimeout(captureUsage, 1000);
 
 const handler = async (request: Request): Promise<Response> => {
+  const start = Date.now();
+
   try {
     let body: Record<string, any> = {};
 
@@ -136,6 +138,10 @@ const handler = async (request: Request): Promise<Response> => {
       status: 500,
       headers: { "koxy-response": "true" },
     });
+  } finally {
+    const end = Date.now();
+    console.log(`Request took ${end - start}ms`);
+    totalUsage += end - start;
   }
 };
 

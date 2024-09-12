@@ -235,10 +235,12 @@ class Sandbox:
 if __name__ == "__main__":
     print("Started")
 
-    test = Sandbox({"id": "12345"}, {})
+    test = Sandbox({"id": "123456"}, {})
 
     start = time.time()
     box_item = test.request(lambda x: print(x))
+    sandbox = modal.Sandbox.from_id(box_item["id"])
+    print(sandbox._hydrate_metadata(None))
 
     print(ago(box_item["created_at"]))
     # print(test.state())

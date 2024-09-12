@@ -12,8 +12,8 @@ class Usage:
 
 if __name__ == "__main__":
     timeout = 500
-    usage = 0.4 * 700
-    idle = 450
+    usage = 1117 / 1000
+    idle = 76000 / 1000
 
     base = Usage.cpu_per_s(1, idle)
     print(base)

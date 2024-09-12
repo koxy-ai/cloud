@@ -60,7 +60,7 @@ const handler = async (request: Request): Promise<Response> => {
         JSON.stringify({
           requests,
           usage,
-          processing,
+          processing: processing.length,
           errors,
           cpus,
           idle,
@@ -87,16 +87,22 @@ const handler = async (request: Request): Promise<Response> => {
       status: res.status,
       headers: { ...(res.headers || {}), "koxy-response": "true" },
     });
-  } catch (err) {
+  } 
+  
+  catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { "koxy-response": "true" },
     });
-  } finally {
+  } 
+  
+  finally {
     if (start !== 0) {
       const took = Date.now() - start;
       usage += took;
-      if (latestUsage === 0 || took > latestUsage) latestUsage = took;
+      if (latestUsage === 0 || took > latestUsage) {
+        latestUsage = took;
+      }
       processing.pop();
     }
   }

@@ -87,8 +87,6 @@ const handler = async (request: Request): Promise<Response> => {
       request.headers.get("method") || request.method,
     );
 
-    await sleep(1000);
-
     return new Response(JSON.stringify(res.body || "{}"), {
       status: res.status,
       headers: { ...(res.headers || {}), "koxy-response": "true" },

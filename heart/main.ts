@@ -14,7 +14,7 @@ if (typeof api === "string") {
 
 let processing: number = 0;
 let requests: number = 0;
-let usage: number = 0;
+let usage: number[] = [];
 let idle: number = 0;
 let errors: string[] = [];
 let latestRequestsLookup = 0;
@@ -63,7 +63,7 @@ const handler = async (request: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({
           requests,
-          usage,
+          usage: usage.reduce((a, b) => a + b, 0),
           processing,
           errors,
           cpus,
@@ -103,7 +103,7 @@ const handler = async (request: Request): Promise<Response> => {
   finally {
     if (start !== 0) {
       const took = Date.now() - start;
-      usage += took;
+      usage.push(took);
       if (latestUsage === 0 || took > latestUsage) {
         latestUsage = took;
       }

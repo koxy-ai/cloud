@@ -62,8 +62,9 @@ def manager():
         if expire_per >= 90:
             api = apis_pool[key]
             traffic = heavy_traffic(created_in, req_num)
+            keep_warm = api["keep_warm"] if "keep_warm" in api else False
 
-            if traffic == False or api["keep_warm"] != True:
+            if traffic == False or keep_warm != True:
                 print(f"container {key} will die soon")
                 return
 

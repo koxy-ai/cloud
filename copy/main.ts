@@ -62,8 +62,9 @@ async function getCPUUsage() {
       };
     });
   
-    usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
-    totalUsage = usage;
+    console.log(lines);
+    // usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
+    totalUsage = text;
   } catch (err: any) {
     console.error(`Error getting CPU usage: ${err.message}`);
     errors.push(err.message);
@@ -82,7 +83,7 @@ async function getMemoryInfo() {
 
 async function captureUsage() {
   while (true) {
-    await getMemoryInfo();
+    await getCPUUsage();
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 }

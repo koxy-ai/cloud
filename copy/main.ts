@@ -15,7 +15,7 @@ if (typeof api === "string") {
 }
 
 let requests: number = 0;
-console.log(Deno.pid)
+let totalUsage: any[] = [];
 
 // Function to calculate CPU usage
 // async function calculateCPUUsage() {
@@ -61,11 +61,12 @@ async function getCPUUsage() {
   });
 
   usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
-  
-  console.log("CPU Usage per Core:");
-  usage.forEach(core => {
-    console.log(`Core ${core.core}: ${100 - core.usage}%`);
-  });
+  totalUsage = usage;
+
+  // console.log("CPU Usage per Core:");
+  // usage.forEach(core => {
+  //   console.log(`Core ${core.core}: ${100 - core.usage}%`);
+  // });
 }
 
 async function captureUsage() {
@@ -95,9 +96,8 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     if (request.headers.get("KOXY-STATS")) {
-      const load = os.loadavg()
       return new Response(
-        JSON.stringify({ requests, load: load[2] || load[1] || load[0], cpu: os.cpus().length }),
+        JSON.stringify({ requests, usage: totalUsage, cpus: os.cpus().length }),
         {
           status: 200,
           headers: { "koxy-response": "true" },

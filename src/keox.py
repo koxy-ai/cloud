@@ -26,6 +26,7 @@ class Keox:
                 # TODO: Update this to be /source/src/ once ready to have deployed APIs:
                 f"echo {shlex.quote(json.dumps(self.api))} > /source/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
+                f"{self.deno} compile --allow-all --no-check --output /koxy/server /koxy/main.ts",
                 f"echo 'Built image version: {version()}'"
             )
         )
@@ -42,7 +43,7 @@ class Keox:
 
         onlog(f"Building image & warming up new container...")
 
-        cpu = api["cpu"] if "cpu" in api else 2
+        cpu = api["cpu"] if "cpu" in api else None
         gpu = self.read_gpu()
 
         memory_request = api["memory"] if "memory" in api else 1024
@@ -58,14 +59,10 @@ class Keox:
         onlog(f"[OPTION]: GPU: {gpu}")
         onlog(f"[OPTION]: Autoscale: {autoscale}")
 
-        build_command = [ f"{self.deno} run --allow-all /koxy/main.ts" ]
+        build_command = [ f"/koxy/server" ]
 
         sandbox = modal.Sandbox.create(
-            *[
-                "bash", 
-                "-c",
-                " && ".join(build_command)
-            ],
+            *[ "bash", "-c", " && ".join(build_command) ],
             image=image,
             timeout=timeout,
             encrypted_ports=[9009],

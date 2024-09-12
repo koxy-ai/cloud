@@ -70,14 +70,24 @@ async function getCPUUsage() {
   }
 }
 
+async function getMemoryInfo() {
+  try {
+    const memoryInfo = Deno.systemMemoryInfo();
+    console.log("Memory Info:", memoryInfo);
+    return memoryInfo;
+  } catch (err: any) {
+    console.error(`Error getting memory info: ${err.message}`);
+  }
+}
+
 async function captureUsage() {
   while (true) {
-    await getCPUUsage();
+    await getMemoryInfo();
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
 }
 
-// setTimeout(captureUsage, 1000);
+setTimeout(captureUsage, 1000);
 
 const handler = async (request: Request): Promise<Response> => {
   try {

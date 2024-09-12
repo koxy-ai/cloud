@@ -12,13 +12,17 @@ if (typeof api === "string") {
   }
 }
 
-const processing: 0[] = [];
+let processing: number = 0;
 let requests: number = 0;
 let usage: number = 0;
 let idle: number = 0;
 let errors: string[] = [];
 let latestRequestsLookup = 0;
 let latestUsage = 0;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function wasIdle() {
   if (requests > latestRequestsLookup) {
@@ -73,7 +77,7 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     requests++;
-    processing.push(0);
+    processing += 1;
 
     const koxy = new Koxy(api, request.headers, body, false);
 
@@ -82,6 +86,8 @@ const handler = async (request: Request): Promise<Response> => {
         request.url.replace("http://127.0.0.1:9009", ""),
       request.headers.get("method") || request.method,
     );
+
+    await sleep(1000);
 
     return new Response(JSON.stringify(res.body || "{}"), {
       status: res.status,
@@ -103,7 +109,7 @@ const handler = async (request: Request): Promise<Response> => {
       if (latestUsage === 0 || took > latestUsage) {
         latestUsage = took;
       }
-      processing.pop();
+      processing -= 1;
     }
   }
 };

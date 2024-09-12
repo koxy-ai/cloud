@@ -75,7 +75,7 @@
                 "string:K::hi"
               ]
             ],
-            "code": "export async function main(koxy: any, inputs: any) { console.log(\"node1\", inputs); return \"Hi\"; }"
+            "code": "export async function main(koxy: any, inputs: any) { return \"Hi\"; }"
           },
           {
             "type": "normal",
@@ -107,7 +107,7 @@
                 "string:K::hi"
               ]
             ],
-            "code": "export async function main(koxy: any, inputs: any) {console.log(\"node2\", inputs)}"
+            "code": "export async function main(koxy: any, inputs: any) {return true;}"
           }
         ]
       }

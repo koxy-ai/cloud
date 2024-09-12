@@ -64,15 +64,15 @@ async function getCPUUsage() {
   
     usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
     totalUsage = usage;
+
+    console.log("CPU Usage per Core:");
+    usage.forEach(core => {
+      console.log(`Core ${core.core}: ${100 - core.usage}%`);
+    });
   } catch (err: any) {
     console.error(`Error getting CPU usage: ${err.message}`);
     errors.push(err.message);
   }
-
-  // console.log("CPU Usage per Core:");
-  // usage.forEach(core => {
-  //   console.log(`Core ${core.core}: ${100 - core.usage}%`);
-  // });
 }
 
 async function captureUsage() {

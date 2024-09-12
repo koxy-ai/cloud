@@ -64,7 +64,7 @@ const handler = async (request: Request): Promise<Response> => {
         JSON.stringify({
           requests,
           usage,
-          processing: processing.length,
+          processing,
           errors,
           cpus,
           idle,

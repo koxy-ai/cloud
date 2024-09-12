@@ -1,5 +1,4 @@
 import { Koxy } from "./src/koxy.ts";
-import pidusage from "npm:pidusage";
 import os from "node:os";
 
 const cpus = os.cpus().length;

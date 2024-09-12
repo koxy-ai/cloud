@@ -21,8 +21,8 @@ def manager():
     terminate_next = modal.Dict.from_name("terminate-next", create_if_missing=True)
 
     def terminate(key: str, sandbox: SandBoxItem = None, api: dict = None):
-        sandbox: SandBoxItem = sandbox if sandbox != None else deepcopy(sandboxes_pool[key])
-        api = api if api != None else deepcopy(apis_pool[key])
+        sandbox: SandBoxItem = sandbox if sandbox != None else sandboxes_pool[key]
+        api = api if api != None else apis_pool[key]
 
         if sandbox == None or api == None:
             return
@@ -71,7 +71,7 @@ def manager():
         del terminate_next[key]
 
     def call(key: str):
-        sandbox: SandBoxItem = deepcopy(sandboxes_pool[key])
+        sandbox: SandBoxItem = dict(sandboxes_pool[key])
         req = None
 
         def heavy_traffic(s: int, req: int) -> bool:
@@ -107,7 +107,7 @@ def manager():
         print("Sandbox is active")
 
         if expire_per >= 90:
-            api = deepcopy(apis_pool[key])
+            api = dict(apis_pool[key])
             traffic = heavy_traffic(created_in, req_num)
             keep_warm = api["keep_warm"] if "keep_warm" in api else False
 

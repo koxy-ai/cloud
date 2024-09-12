@@ -62,8 +62,8 @@ async function getCPUUsage() {
       };
     });
   
-    usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
-    totalUsage = usage;
+    // usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
+    totalUsage = text;
   } catch (err: any) {
     console.error(`Error getting CPU usage: ${err.message}`);
     errors.push(err.message);

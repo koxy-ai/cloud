@@ -15,7 +15,7 @@ if (typeof api === "string") {
 }
 
 let requests: number = 0;
-let totalUsage: any[] = [];
+let totalUsage: any = "";
 let errors: string[] = [];
 
 // Function to calculate CPU usage
@@ -63,7 +63,7 @@ async function getCPUUsage() {
     });
   
     // usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
-    totalUsage = usage;
+    totalUsage = text;
   } catch (err: any) {
     console.error(`Error getting CPU usage: ${err.message}`);
     errors.push(err.message);

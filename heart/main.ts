@@ -41,7 +41,7 @@ let errors: string[] = [];
 async function getCPUUsage() {
   try {
     const process = Deno.run({
-      cmd: ["mpstat", "-P", "ALL", "5", "1"],
+      cmd: ["mpstat", "-P", "ALL", "1", "1"],
       stdout: "piped",
       stderr: "piped"
     });
@@ -78,7 +78,7 @@ async function getCPUUsage() {
 async function captureUsage() {
   while (true) {
     await getCPUUsage();
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
 }
 

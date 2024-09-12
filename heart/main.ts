@@ -36,8 +36,7 @@ function wasIdle() {
 setInterval(wasIdle, 1000);
 
 const handler = async (request: Request): Promise<Response> => {
-  const start = Date.now();
-  processing.push(0);
+  let start = Date.now();
 
   try {
     let body: Record<string, any> = {};
@@ -49,6 +48,7 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     if (request.headers.get("KOXY-GET-REQUESTS")) {
+      start = 0;
       return new Response(JSON.stringify({ requests }), {
         status: 200,
         headers: { "koxy-response": "true" },
@@ -56,6 +56,7 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     if (request.headers.get("KOXY-STATS")) {
+      start = 0;
       return new Response(
         JSON.stringify({
           requests,
@@ -73,6 +74,7 @@ const handler = async (request: Request): Promise<Response> => {
     }
 
     requests++;
+    processing.push(0);
 
     const koxy = new Koxy(api, request.headers, body, false);
 
@@ -92,11 +94,12 @@ const handler = async (request: Request): Promise<Response> => {
       headers: { "koxy-response": "true" },
     });
   } finally {
-    const took = Date.now() - start;
-    console.log(`Request took ${took}ms`);
-    usage += took;
-    latestUsage = took;
-    processing.pop();
+    if (start !== 0) {
+      const took = Date.now() - start;
+      usage += took;
+      if (latestUsage === 0 || took > latestUsage) latestUsage = took;
+      processing.pop();
+    }
   }
 };
 

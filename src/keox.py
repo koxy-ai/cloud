@@ -43,14 +43,11 @@ class Keox:
 
         onlog(f"Building image & warming up new container...")
 
-        cpu = api["cpu"] if "cpu" in api else None
-        gpu = self.read_gpu()
+        cpu = Keox.read_cpu(api)
+        gpu = Keox.read_gpu(api)
+        [memory_request, memory_limit, memory] = Keox.read_memory(api)
 
-        memory_request = api["memory"] if "memory" in api else 1024
-        memory_limit = api["memory_limit"] if "memory_limit" in api else 2048
-        memory = (memory_request, memory_limit) if isinstance(memory_request, int) and isinstance(memory_limit, int) else None
-
-        timeout = api["timeout"] if "timeout" in api else 15
+        timeout = Keox.read_timeout(api)
         autoscale = api["autoscale"] if "autoscale" in api else False
 
         onlog(f"[OPTION]: Timeout: {timeout}s")
@@ -89,8 +86,34 @@ class Keox:
 
         return [sandbox, host]
 
-    def read_gpu(self):
-        gpu = self.api["gpu"] if "gpu" in self.api else None
+    @classmethod
+    def read_property(cls, api: dict, key: str, default: Any = None):
+        if key in api:
+            return api[key]
+
+        return default
+
+    @classmethod
+    def read_timeout(cls, api: dict):
+        timeout = Keox.read_property(api, "timeout", 120)
+        return timeout
+
+    @classmethod
+    def read_cpu(cls, api: dict):
+        cpu = api["cpu"] if "cpu" in api else 0.2
+        return cpu
+
+    @classmethod
+    def read_memory(cls, api: dict):
+        memory_request = Keox.read_property(api, "memory_request", 1024)
+        memory_limit = Keox.read_property(api, "memory_limit", 2048)
+        memory = (memory_request, memory_limit) if isinstance(memory_request, int) and isinstance(memory_limit, int) else None
+
+        return [memory_request, memory_limit, memory]
+
+    @classmethod
+    def read_gpu(cls, api: dict):
+        gpu = api["gpu"] if "gpu" in api else None
 
         if gpu == None:
             return None

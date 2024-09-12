@@ -14,84 +14,31 @@ if (typeof api === "string") {
   }
 }
 
+const processing: 0[] = [];
 let requests: number = 0;
-let totalUsage: number = 0;
+let usage: number = 0;
+let idle: number = 0;
 let errors: string[] = [];
+let latestRequestsLookup = 0;
+let latestUsage = 0;
 
-// Function to calculate CPU usage
-// async function calculateCPUUsage() {
-//   const process = Deno.run({
-//     cmd: ["ps", "-p", Deno.pid.toString(), "-o", "%cpu"],
-//     stdout: "piped",
-//     stderr: "piped"
-//   });
-  
-//   const output = await process.output(); // output will be a Uint8Array
-//   const decoder = new TextDecoder();
-//   const cpuUsage = decoder.decode(output).split("\n")[1].trim();
-  
-//   console.log(`CPU usage: ${cpuUsage}%`);
-// }
-
-// // Print CPU usage every 10 seconds
-// setInterval(() => {
-//   calculateCPUUsage();
-// }, 1000);
-
-async function getCPUUsage() {
-  try {
-    const process = Deno.run({
-      cmd: ["mpstat", "-P", "ALL", "1", "1"],
-      stdout: "piped",
-      stderr: "piped"
-    });
-  
-    const output = await process.output();
-    const decoder = new TextDecoder();
-    const text = decoder.decode(output);
-    const lines = text.split('\n');
-    
-    // Parse CPU usage for each core
-    let usage = lines.slice(3, -1).map(line => {
-      const fields = line.trim().split(/\s+/);
-      const core = parseInt(fields[1]);
-  
-      return {
-        core,
-        usage: parseFloat(fields[11]) // %idle (negate to get %usage)
-      };
-    });
-  
-    console.log(lines);
-    // usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
-    // totalUsage = lines;
-  } catch (err: any) {
-    console.error(`Error getting CPU usage: ${err.message}`);
-    errors.push(err.message);
+function wasIdle() {
+  if (requests > latestRequestsLookup) {
+    latestUsage = 0;
+    latestRequestsLookup = Number(requests);
+    return;
   }
+
+  idle += 1000 - latestUsage;
+  latestRequestsLookup = Number(requests);
+  latestUsage = 0;
 }
 
-async function getMemoryInfo() {
-  try {
-    const memoryInfo = Deno.systemMemoryInfo();
-    console.log("Memory Info:", memoryInfo);
-    return memoryInfo;
-  } catch (err: any) {
-    console.error(`Error getting memory info: ${err.message}`);
-  }
-}
-
-async function captureUsage() {
-  while (true) {
-    await getCPUUsage();
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  }
-}
-
-// setTimeout(captureUsage, 1000);
+setInterval(wasIdle, 1000);
 
 const handler = async (request: Request): Promise<Response> => {
   const start = Date.now();
+  processing.push(0);
 
   try {
     let body: Record<string, any> = {};
@@ -111,7 +58,14 @@ const handler = async (request: Request): Promise<Response> => {
 
     if (request.headers.get("KOXY-STATS")) {
       return new Response(
-        JSON.stringify({ requests, usage: totalUsage, errors, cpus: os.cpus().length }),
+        JSON.stringify({
+          requests,
+          usage,
+          processing,
+          errors,
+          cpus: os.cpus().length,
+          idle
+        }),
         {
           status: 200,
           headers: { "koxy-response": "true" },
@@ -139,11 +93,12 @@ const handler = async (request: Request): Promise<Response> => {
       headers: { "koxy-response": "true" },
     });
   } finally {
-    const end = Date.now();
-    console.log(`Request took ${end - start}ms`);
-    totalUsage += end - start;
+    const took = Date.now() - start;
+    console.log(`Request took ${took}ms`);
+    usage += took;
+    latestUsage = took;
+    processing.pop();
   }
 };
 
 Deno.serve({ port: 9009 }, handler);
-

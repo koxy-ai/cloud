@@ -16,8 +16,8 @@ class SandBoxItem(TypedDict):
     expires_at: str
     latest_request: str | None
     sandbox: modal.Sandbox
-    requests: List[str]
     version: str
+    termination_delayed: int
 
 class Sandbox:
     pool: Dict[str, SandBoxItem]
@@ -54,13 +54,13 @@ class Sandbox:
         self.apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
 
     def create(self, onlog: Callable[[str], Any], force_rebuild: bool = False, skip:bool = False) -> SandBoxItem | None:
-        try:
+        # try:
             if force_rebuild != True and skip != True and self.id in self.creation_state and self.creation_state[self.id] == True:
                 print("Waiting for container to warm up...")
                 total: float = 0.0;
 
                 while self.creation_state[self.id] == True:
-                    if total > 12:
+                    if total > 30:
                         print("Timed out waiting for container to warm up, warming up new one!")
                         self.creation_state[self.id] = False
                         total = 100
@@ -93,7 +93,7 @@ class Sandbox:
                 "expires_at": timing[1],
                 "sandbox": sandbox,
                 "version": version(),
-                "requests": current["requests"] if current and "requests" in current != None else []
+                "termination_delayed": 0
             }
 
             self.pool[self.id] = item
@@ -111,13 +111,13 @@ class Sandbox:
 
             self.creation_state[self.id] = False
             return item
-        except modal.exception.FunctionTimeoutError:
-            print("Timed out")
-            self.creation_state[self.id] = False
-            return None
-        except:
-            self.creation_state[self.id] = False
-            return None
+        # except modal.exception.FunctionTimeoutError:
+        #     print("Timed out")
+        #     self.creation_state[self.id] = False
+        #     return None
+        # except:
+        #     self.creation_state[self.id] = False
+        #     return None
 
     def request(self, onlog: Callable[[str], Any], force_rebuild: bool = False) -> SandBoxItem | None:
         self.update_pools()
@@ -125,14 +125,12 @@ class Sandbox:
         if force_rebuild != True:
             sandbox = self.get()
             if sandbox != None and self.verify_sandbox(sandbox) == True:
-                self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
                 return sandbox
 
         created = self.create(onlog)
         if created == None:
             return None
 
-        self.pool[self.id]["requests"].append(datetime.now(timezone.utc).isoformat())
         return created
 
     def verify_sandbox(self, sandbox: SandBoxItem):

@@ -9,6 +9,7 @@
     # pkgs.go
     pkgs.python3
     pkgs.deno
+    pkgs.sysstat
     # pkgs.pythonPackages.pip
     # pkgs.nodejs_20
     # pkgs.nodePackages.nodemon

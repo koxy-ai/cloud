@@ -101,6 +101,7 @@ class Sandbox:
 
             keep_awake = self.api["keep_awake"] if "keep_awake" in self.api else False
 
+            # remove once the manager is deployed
             if current != None and keep_awake != True:
                 try:
                     current = modal.Sandbox.from_id(current["id"])

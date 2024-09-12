@@ -1,5 +1,8 @@
 import { Koxy } from "./src/koxy.ts";
-import * as os from "https://deno.land/std@0.123.0/node/os.ts";
+import pidusage from "npm:pidusage";
+import os from "node:os";
+
+const cpus = os.cpus().length;
 
 let api: any = {"id": "324", "env": {"TOKEN1": "VALUE1", "TOKEN2": "VALUE2"}, "flows": {"/api/hi": [{"id": "1", "name": "1", "method": "GET", "history": [], "dependecies": [], "start": {"type": "start", "id": "start", "name": "start", "label": "start", "icon": "start", "description": "start", "code": "start", "inputs": [], "next": "node1"}, "end": {"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}, "nodes": [{"type": "normal", "id": "node1id", "name": "node1", "label": "Node", "description": "", "icon": "", "next": "node2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) { console.log(\"node1\", inputs); return \"Hi\"; }"}, {"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {console.log(\"node2\", inputs)}"}, {"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}]}]}};
 
@@ -11,23 +14,68 @@ if (typeof api === "string") {
   }
 }
 
-let initStart: number = Date.now();
 let requests: number = 0;
+console.log(Deno.pid)
 
-// Function to calculate CPU usage in Deno
-async function printCpuUsage() {
-  console.log(os.cpus())
-  let numCpus = os.cpus().length;
-  let numCpusUtilized = Deno.loadavg()[2]; // or use [1] for 5 minute average, or [2] for 15 minute average
-  let cpuUtilizationRatio = numCpusUtilized / numCpus; // is a value between 0 and 1
-  console.log(`CPU Utilization: ${cpuUtilizationRatio * 100}%`);
-  console.log(`Number of CPU utilized: ${numCpusUtilized}`);
+// Function to calculate CPU usage
+// async function calculateCPUUsage() {
+//   const process = Deno.run({
+//     cmd: ["ps", "-p", Deno.pid.toString(), "-o", "%cpu"],
+//     stdout: "piped",
+//     stderr: "piped"
+//   });
+  
+//   const output = await process.output(); // output will be a Uint8Array
+//   const decoder = new TextDecoder();
+//   const cpuUsage = decoder.decode(output).split("\n")[1].trim();
+  
+//   console.log(`CPU usage: ${cpuUsage}%`);
+// }
 
-  return numCpusUtilized;
+// // Print CPU usage every 10 seconds
+// setInterval(() => {
+//   calculateCPUUsage();
+// }, 1000);
+
+async function getCPUUsage() {
+  const process = Deno.run({
+    cmd: ["mpstat", "-P", "ALL", "5", "1"],
+    stdout: "piped",
+    stderr: "piped"
+  });
+
+  const output = await process.output();
+  const decoder = new TextDecoder();
+  const text = decoder.decode(output);
+  const lines = text.split('\n');
+  
+  // Parse CPU usage for each core
+  let usage = lines.slice(3, -1).map(line => {
+    const fields = line.trim().split(/\s+/);
+    const core = parseInt(fields[1]);
+
+    return {
+      core,
+      usage: parseFloat(fields[11]) // %idle (negate to get %usage)
+    };
+  });
+
+  usage = usage.filter(i => !isNaN(i.core) && !isNaN(i.usage) && i.core < cpus);
+  
+  console.log("CPU Usage per Core:");
+  usage.forEach(core => {
+    console.log(`Core ${core.core}: ${100 - core.usage}%`);
+  });
 }
 
-// Print CPU usage every 10 seconds
-setInterval(printCpuUsage, 10000);
+async function captureUsage() {
+  while (true) {
+    await getCPUUsage();
+    await new Promise(resolve => setTimeout(resolve, 5000));
+  }
+}
+
+setTimeout(captureUsage, 1000);
 
 const handler = async (request: Request): Promise<Response> => {
   try {
@@ -59,7 +107,7 @@ const handler = async (request: Request): Promise<Response> => {
 
     requests++;
 
-    const koxy = new Koxy(api, request.headers, body);
+    const koxy = new Koxy(api, request.headers, body, false);
 
     const res = await koxy.run(
       request.headers.get("path") ||
@@ -80,3 +128,4 @@ const handler = async (request: Request): Promise<Response> => {
 };
 
 Deno.serve({ port: 9009 }, handler);
+

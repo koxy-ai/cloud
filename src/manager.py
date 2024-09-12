@@ -15,7 +15,13 @@ def manager():
 
     sandboxes_pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
     apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
-    calls = []
+    terminate_next = modal.Dict.from_name("terminate-next", create_if_missing=True)
+
+    def terminate(key: str):
+        sandbox: SandBoxItem = terminate_next[key]
+        sb = modal.Sandbox.from_id(sandbox["id"])
+        sb.terminate()
+        del terminate_next[key]
 
     def call(key: str):
         sandbox: SandBoxItem = sandboxes_pool[key]
@@ -41,14 +47,11 @@ def manager():
             print("Sandbox is idle")
             return
 
-        sb = modal.Sandbox.from_id(sandbox["id"])
-        # print(sb.)
-
         created_at = read_iso(sandbox["created_at"])
-        expires_at = read_iso(sandbox["expires_at"])
-        expires_in = (expires_at - datetime.now(timezone.utc)).total_seconds() - 20
         created_in = (datetime.now(timezone.utc) - created_at).total_seconds()
-        timeout = (expires_at - created_at).total_seconds() - 20
+        expires_at = read_iso(sandbox["expires_at"])
+        expires_in = (expires_at - datetime.now(timezone.utc)).total_seconds()
+        timeout = (expires_at - created_at).total_seconds()
         expire_per = (created_in * 100) / timeout
 
         req_num = req["requests"] if "requests" in req else 0
@@ -65,13 +68,15 @@ def manager():
                 return
 
             print("warming up new container")
-
-        print(timeout, expires_in, req_num)
+            Sandbox(key, {}).create(lambda x: print(x))
+            terminate_next[key] = sandbox
 
     with ThreadPoolExecutor() as executor:
         calls = list(executor.map(call, apis_pool.keys()))
+        terms = list(executor.map(terminate, terminate_next.keys()))
 
     pass
 
 if __name__ == "__main__":
     manager()
+    

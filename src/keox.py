@@ -19,6 +19,7 @@ class Keox:
             .apt_install("git")
             .apt_install("curl")
             .apt_install("unzip")
+            .apt_install("sysstat")
             .run_commands(
                 "curl -fsSL https://deno.land/install.sh | sh -s v1.38.2",
                 "git clone https://github.com/koxy-ai/cloud /source",
@@ -41,7 +42,7 @@ class Keox:
 
         onlog(f"Building image & warming up new container...")
 
-        cpu = api["cpu"] if "cpu" in api else None
+        cpu = api["cpu"] if "cpu" in api else 2
         gpu = self.read_gpu()
 
         memory_request = api["memory"] if "memory" in api else 1024

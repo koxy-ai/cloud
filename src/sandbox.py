@@ -19,6 +19,7 @@ class SandBoxItem(TypedDict):
     version: str
     termination_delayed: int
     billed: bool
+    full_limit: str
 
 class Sandbox:
     pool: Dict[str, SandBoxItem]
@@ -85,8 +86,8 @@ class Sandbox:
 
             current = self.get(clone=True)
             [sandbox, host] = self.keox.build_sandbox(onlog, force_rebuild)
-
             timing = self.generate_timing(timeout*1000)
+
             item: SandBoxItem = {
                 "id": sandbox.object_id,
                 "host": host,
@@ -95,7 +96,8 @@ class Sandbox:
                 "sandbox": sandbox,
                 "version": version(),
                 "termination_delayed": 0,
-                "billed": False
+                "billed": False,
+                "full_limit": timing[2]
             }
 
             self.pool[self.id] = item
@@ -233,7 +235,10 @@ class Sandbox:
         expiration_time = created_at + timedelta(milliseconds=ms)
         expiration_time_iso = expiration_time.isoformat()
 
-        return [created_at_iso, expiration_time_iso]
+        full_limit = created_at + timedelta(milliseconds=ms + Keox.extra_timeout()*1000)
+        full_limit_iso = full_limit.isoformat()
+
+        return [created_at_iso, expiration_time_iso, full_limit_iso]
 
 if __name__ == "__main__":
     print("Started")

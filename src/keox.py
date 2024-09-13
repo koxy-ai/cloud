@@ -24,7 +24,7 @@ class Keox:
                 "curl -fsSL https://deno.land/install.sh | sh -s v1.38.2",
                 "git clone https://github.com/koxy-ai/cloud /source",
                 # TODO: Update this to be /source/src/ once ready to have deployed APIs:
-                f"echo {shlex.quote(json.dumps(self.api))} > /source/api.json",
+                f"echo {shlex.quote(json.dumps(self.api))} > /source/src/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
                 f"{self.deno} compile --allow-all --no-check --output /koxy/server /koxy/main.ts",
                 f"echo 'Built image version: {version()}'"
@@ -48,13 +48,11 @@ class Keox:
         [memory_request, memory_limit, memory] = Keox.read_memory(api)
 
         timeout = Keox.read_timeout(api) + Keox.extra_timeout()
-        autoscale = api["autoscale"] if "autoscale" in api else False
 
         onlog(f"[OPTION]: Timeout: {timeout}s")
         onlog(f"[OPTION]: vCPU: {(cpu or 1)*2} cores")
         onlog(f"[OPTION]: Memory: {memory_request}MB - {memory_limit}MB")
         onlog(f"[OPTION]: GPU: {gpu}")
-        onlog(f"[OPTION]: Autoscale: {autoscale}")
 
         build_command = [ f"/koxy/server" ]
 
@@ -63,17 +61,16 @@ class Keox:
             image=image,
             timeout=timeout,
             encrypted_ports=[9009],
-            cpu=cpu if autoscale == False else None,
-            memory=memory if autoscale == False else None,
+            cpu=cpu,
+            memory=memory,
             gpu=gpu,
         )
 
         onlog(f"Built container: {sandbox.object_id}")
 
-        tunnel_start = time.time()
         tunnel = sandbox.tunnels()[0]
         host = f"https://{tunnel.host}"
-        onlog(f"Connected HTTPS tunnel in {str(time.time() - tunnel_start)[:4]}s")
+        onlog(f"Connected HTTPS tunnel with {host}")
         start_at = time.time()
 
         for line in sandbox.stdout:

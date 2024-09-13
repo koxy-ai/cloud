@@ -1,7 +1,7 @@
 import { Koxy } from "./src/koxy.ts";
 import os from "node:os";
 
-const cpus = os.cpus().length;
+let cpus = os.cpus().length;
 let api: any = "// <KOXY_API>";
 
 if (typeof api === "string") {
@@ -108,6 +108,11 @@ const handler = async (request: Request): Promise<Response> => {
         latestUsage = took;
       }
       processing -= 1;
+
+      const nowCpu = os.cpus().length;
+      if (nowCpu !== cpus) {
+        cpus = nowCpu;
+      }
     }
   }
 };

@@ -18,6 +18,7 @@ class SandBoxItem(TypedDict):
     sandbox: modal.Sandbox
     version: str
     termination_delayed: int
+    billed: bool
 
 class Sandbox:
     pool: Dict[str, SandBoxItem]
@@ -93,7 +94,8 @@ class Sandbox:
                 "expires_at": timing[1],
                 "sandbox": sandbox,
                 "version": version(),
-                "termination_delayed": 0
+                "termination_delayed": 0,
+                "billed": False
             }
 
             self.pool[self.id] = item
@@ -138,15 +140,18 @@ class Sandbox:
         if timing == False:
             return False
 
-        if sandbox["version"] != version():
-            return False
+        # TODO: Do this only in development if needed for testing, otherwise
+        # the system will auto update on the next container spin
+        # if sandbox["version"] != version():
+        #     return False
 
         return True
 
     def verify_timing(self, sandbox: SandBoxItem):
         [created_at, expires_at] = [sandbox["created_at"], sandbox["expires_at"]]
+        # print(expires_at, datetime.now(timezone.utc))
 
-        if future(expires_at) < min_to_ms(0.3):
+        if future(expires_at) < 0:
             return False
 
         return True

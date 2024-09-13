@@ -47,7 +47,7 @@ class Keox:
         gpu = Keox.read_gpu(api)
         [memory_request, memory_limit, memory] = Keox.read_memory(api)
 
-        timeout = Keox.read_timeout(api)
+        timeout = Keox.read_timeout(api) + Keox.extra_timeout()
         autoscale = api["autoscale"] if "autoscale" in api else False
 
         onlog(f"[OPTION]: Timeout: {timeout}s")
@@ -99,8 +99,12 @@ class Keox:
         return timeout
 
     @classmethod
+    def extra_timeout(cls):
+        return 150
+
+    @classmethod
     def read_cpu(cls, api: dict):
-        cpu = api["cpu"] if "cpu" in api else 0.2
+        cpu = api["cpu"] if "cpu" in api else 1
         return cpu
 
     @classmethod

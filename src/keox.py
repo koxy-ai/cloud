@@ -85,7 +85,7 @@ class Keox:
     @classmethod
     def build_volume(cls, api: dict, name: str):
         return modal.Volume.from_name(
-            f"vol-{name}-{self.api['id']}", 
+            f"vol-{name}-{api['id']}", 
             create_if_missing=True
         )
 

@@ -1,1 +1,1 @@
-./update.sh && python ./src/manager.py --deploy
+./update.sh && echo "\nDeploying containers" && python ./src/manager.py --deploy

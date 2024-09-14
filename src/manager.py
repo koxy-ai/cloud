@@ -238,6 +238,8 @@ if __name__ == "__main__":
     deploy_arg = "--deploy" in sys.argv
 
     if deploy_arg == True:
+        print("Deploying sandbox manager...")
         modal.runner.deploy_app(app)
+        print("Deployed successfully!")
     else:
         manager.local()

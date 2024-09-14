@@ -19,6 +19,7 @@ export class Koxy {
 
   static stopSign: string = "<KOXY_STOP>";
   static ignoreSign: string = "<KOXY_IGNORE>";
+
   runningNode: string = "";
 
   constructor(

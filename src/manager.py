@@ -173,7 +173,7 @@ def manager():
         expires_in = (expires_at - datetime.now(timezone.utc)).total_seconds()
         timeout = (expires_at - created_at).total_seconds()
 
-        if future(sandbox["expires_at"]) < 0:
+        if future(sandbox["full_limit"]) < 0:
             print(f"Container {sandbox['id']} is expired, will terminate")
             terminate_next[key] = sandbox
             del sandboxes_pool[key]

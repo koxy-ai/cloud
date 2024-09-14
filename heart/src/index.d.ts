@@ -104,8 +104,16 @@ export interface Flow {
   dependecies: string[];
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  description: string;
+  schema: [Input, string][];
+}
+
 export interface Api {
   id: string;
+  collections?: Collection[];
   cpu?: number;
   memory?: number;
   memory_limit?: number;

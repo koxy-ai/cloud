@@ -1,7 +1,12 @@
+import { Koxy } from "./koxy";
+import { ValidateInputs } from "./validate-inputs";
+
 export class DB {
+  private koxy: Koxy;
   private kv: any;
 
-  constructor(kv?: any) {
+  constructor(koxy: Koxy, kv?: any) {
+    this.koxy = koxy;
     this.kv = kv;
   }
 
@@ -17,14 +22,37 @@ export class DB {
     this.kv = await Deno.openKv("/data/db.sqlite");
   }
 
-  public async get<T = any>(key: string[]): Promise<T | null> {
+  public async get<T = any>(
+    collection: string,
+    key: string,
+  ): Promise<T | null> {
     await this.init();
-    const res = await this.kv.get(key);
+    const res = await this.kv.get([collection, key]);
     return (res.value ?? null) as T | null;
   }
 
-  public async set<T = any>(key: string[], value: T) {
+  public async set<T = any>(
+    collection: string,
+    key: string[],
+    value: T,
+  ): Promise<boolean> {
     await this.init();
-    await this.kv.set(key, value);
+
+    const col = (this.koxy.api.collections || []).find((c) => c.id === collection);
+    if (!col) {
+      this.koxy.logger.error(`Collection ${collection} not found`);
+      return false;
+    }
+
+    const schema = col.schema;
+    const validator = new ValidateInputs(this.koxy, schema);
+
+    if (!validator.validate(value as any)) {
+      this.koxy.logger.error(`Invalid value for collection ${collection}`);
+      return false;
+    }
+
+    await this.kv.set([collection, key], value);
+    return true;
   }
 }

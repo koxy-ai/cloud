@@ -3,7 +3,7 @@ import { Logger } from "./logger.ts";
 import { Results } from "./results.ts";
 import { Runner } from "./runner.ts";
 import { DB } from "./db.ts";
-import type { Api } from "./index.d.ts"
+import type { Api } from "./index.d.ts";
 
 export class Koxy {
   env: Env;
@@ -26,14 +26,14 @@ export class Koxy {
     api: Api,
     headers: Request["headers"],
     body: Record<string, any> = {},
-    log: boolean = true
+    log: boolean = true,
   ) {
     this.env = env;
     this.api = api;
 
     this.logger = new Logger(this, log);
     this.results = new Results();
-    this.db = new DB();
+    this.db = new DB(this);
     this.db.init();
 
     this.headers = headers;
@@ -41,7 +41,7 @@ export class Koxy {
   }
 
   async run(path: string, method: string): Promise<
-    { status: number; body?: any, headers?: Record<string, string> }
+    { status: number; body?: any; headers?: Record<string, string> }
   > {
     try {
       this.runner = new Runner(path, method, this);
@@ -52,8 +52,8 @@ export class Koxy {
         body: {
           success: false,
           message: err.message || "Unexpected error running flow",
-          headers: {}
-        }
+          headers: {},
+        },
       };
     }
   }

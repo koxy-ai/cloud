@@ -1,5 +1,5 @@
-import { Koxy } from "./koxy";
-import { ValidateInputs } from "./validate-inputs";
+import { Koxy } from "./koxy.ts";
+import { ValidateInputs } from "./validate-inputs.ts";
 
 export class DB {
   private koxy: Koxy;

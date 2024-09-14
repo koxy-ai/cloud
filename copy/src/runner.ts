@@ -66,7 +66,7 @@ const nodes: Record<
     return KoxyClass.stopSign;
   }
 }),}],
-"node2": [{"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {koxy.db.set(['test'], {value: koxy.body.value}); return true;}"}, { main: 
+"node2": [{"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {koxy.db.set('test', '1', {value: koxy.body.value}); return true;}"}, { main: 
 (async (node: NormalNode, Koxy: KoxyClass, self: {
   main: Function;
   failed?: Function;
@@ -244,11 +244,11 @@ const nodes: Record<
     return KoxyClass.stopSign;
   }
 }),}],
-"end2": [{"type": "return", "id": "end2", "name": "end2", "label": "end2", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "value", "type": "string", "label": "", "required": true, "visible": true}, "code:K::(await Koxy.db.get(['test'])).value"]]}, { main: 
+"end2": [{"type": "return", "id": "end2", "name": "end2", "label": "end2", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "value", "type": "string", "label": "", "required": true, "visible": true}, "code:K::(await Koxy.db.get('test', '1')).value"]]}, { main: 
 (async (node: ReturnNode, Koxy: KoxyClass, self) => {
   try {
     const inputs = {
-      "value": (await Koxy.db.get(['test'])).value,
+      "value": (await Koxy.db.get('test', '1')).value,
     };
 
     const validator = new ValidateInputs(Koxy, node.inputs);

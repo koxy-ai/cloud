@@ -58,7 +58,7 @@ class Sandbox:
         self.hosts_pool = modal.Dict.from_name("sandbox-hosts", create_if_missing=True)
 
     def create(self, onlog: Callable[[str], Any], force_rebuild: bool = False, skip:bool = False) -> SandBoxItem | None:
-        # try:
+        try:
             if force_rebuild != True and skip != True and self.id in self.creation_state and self.creation_state[self.id] == True:
                 print("Waiting for container to warm up...")
                 total: float = 0.0;
@@ -108,13 +108,13 @@ class Sandbox:
 
             self.creation_state[self.id] = False
             return item
-        # except modal.exception.FunctionTimeoutError:
-        #     print("Timed out")
-        #     self.creation_state[self.id] = False
-        #     return None
-        # except:
-        #     self.creation_state[self.id] = False
-        #     return None
+        except modal.exception.FunctionTimeoutError:
+            print("Timed out")
+            self.creation_state[self.id] = False
+            return None
+        except:
+            self.creation_state[self.id] = False
+            return None
 
     def request(self, onlog: Callable[[str], Any], force_rebuild: bool = False) -> SandBoxItem | None:
         self.update_pools()

@@ -66,7 +66,7 @@ const nodes: Record<
     return KoxyClass.stopSign;
   }
 }),}],
-"node2": [{"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {koxy.db.set(['test'], {value: 'test'}); return true;}"}, { main: 
+"node2": [{"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {koxy.db.set(['test'], {value: koxy.body.value}); return true;}"}, { main: 
 (async (node: NormalNode, Koxy: KoxyClass, self: {
   main: Function;
   failed?: Function;

@@ -1,0 +1,1 @@
+./update.sh && python ./src/manager.py --deploy

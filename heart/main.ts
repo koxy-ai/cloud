@@ -89,12 +89,16 @@ const handler = async (request: Request): Promise<Response> => {
 
     return new Response(JSON.stringify(res.body || "{}"), {
       status: res.status,
-      headers: { ...(res.headers || {}), "koxy-response": "true" },
+      headers: {
+        ...(res.headers || {}),
+        "koxy-response": "true",
+        "Access-Control-Allow-Origin": "*",
+      },
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "koxy-response": "true" },
+      headers: { "koxy-response": "true", "Access-Control-Allow-Origin": "*" },
     });
   } finally {
     if (start !== 0) {

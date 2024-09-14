@@ -4,6 +4,11 @@
     "TOKEN1": "VALUE1",
     "TOKEN2": "VALUE2"
   },
+  "collections": [
+    {"id": "test", "schema": [[
+      {"key": "value", "type": "string", "required": true}, ""
+    ]]}
+  ],
   "flows": {
     "/api/set": [
       {
@@ -107,7 +112,7 @@
                 "string:K::hi"
               ]
             ],
-            "code": "export async function main(koxy: any, inputs: any) {koxy.db.set(['test'], {value: koxy.body.value}); return true;}"
+            "code": "export async function main(koxy: any, inputs: any) {koxy.db.set('test', '1', {value: koxy.body.value}); return true;}"
           }
         ]
       }
@@ -147,7 +152,7 @@
                 "required": true,
                 "visible": true
               },
-              "code:K::(await Koxy.db.get(['test'])).value"
+              "code:K::(await Koxy.db.get('test', '1')).value"
             ]
           ]
         },

@@ -66,7 +66,7 @@ const nodes: Record<
     return KoxyClass.stopSign;
   }
 }),}],
-"node2": [{"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {return true;}"}, { main: 
+"node2": [{"type": "normal", "id": "node2id", "name": "node2", "label": "Node", "description": "", "icon": "", "next": "end", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {koxy.db.set(['test'], {value: 'test'}); return true;}"}, { main: 
 (async (node: NormalNode, Koxy: KoxyClass, self: {
   main: Function;
   failed?: Function;
@@ -123,6 +123,132 @@ const nodes: Record<
   try {
     const inputs = {
       "response": Koxy.results.get("node1"),
+    };
+
+    const validator = new ValidateInputs(Koxy, node.inputs);
+    const valid = validator.validate(inputs);
+    if (!valid) return KoxyClass.stopSign;
+
+    return inputs;
+  } catch (err) {
+    return {
+      status: 500,
+      body: {
+        success: false,
+        message: err.message || "Unexpected error while running the return node",
+      },
+    };
+  }
+}),}],
+"node1_2": [{"type": "normal", "id": "node1_2id", "name": "node1_2", "label": "Node", "description": "", "icon": "", "next": "node2_2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) { return \"Hi\"; }"}, { main: 
+(async (node: NormalNode, Koxy: KoxyClass, self: {
+  main: Function;
+  failed?: Function;
+}, retry: number = 0): Promise<any> => {
+  try {
+
+    const inputs = {
+      parent: undefined,
+      children: [],
+      "date": Date.now(),"hi-s": "hi",
+    };
+
+    const validator = new ValidateInputs(Koxy, node.inputs);
+    const valid = validator.validate(inputs);
+    if (!valid) return KoxyClass.stopSign;
+
+    return await koxyNodes.node1_2(Koxy, inputs);
+  } catch (err) {
+
+    function sleep(ms: number) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    if (!node.onFail) return KoxyClass.stopSign;
+
+    if (node.onFail.type === "retry" && retry < node.onFail.max) {
+      await sleep(node.onFail.interval || 0);
+
+      Koxy.logger.error(`Node failed, retrying`, err.message || err);
+      return await self.main(node, Koxy, self, retry + 1);
+    }
+
+    if (node.onFail.type === "terminate") {
+      Koxy.logger.error(`Node failed, terminating`, err.message || err);
+      return KoxyClass.stopSign;
+    }
+
+    if (node.onFail.type === "ignore") {
+      Koxy.logger.error(`Node failed, ignoring`, err.message || err);
+      return KoxyClass.ignoreSign;
+    }
+
+    if (node.onFail.type === "custom" && self.failed) {
+      Koxy.logger.error(`Node failed, running custom handler`, err.message || err);
+      return await self.failed(node, Koxy, self);
+    }
+
+    Koxy.logger.error(`Node failed, terminating`, err.message || err);
+    return KoxyClass.stopSign;
+  }
+}),}],
+"node2_2": [{"type": "normal", "id": "node2_2id", "name": "node2_2", "label": "Node", "description": "", "icon": "", "next": "end2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) {return true;}"}, { main: 
+(async (node: NormalNode, Koxy: KoxyClass, self: {
+  main: Function;
+  failed?: Function;
+}, retry: number = 0): Promise<any> => {
+  try {
+
+    const inputs = {
+      parent: undefined,
+      children: [],
+      "date": Date.now(),"hi-s": "hi",
+    };
+
+    const validator = new ValidateInputs(Koxy, node.inputs);
+    const valid = validator.validate(inputs);
+    if (!valid) return KoxyClass.stopSign;
+
+    return await koxyNodes.node2_2(Koxy, inputs);
+  } catch (err) {
+
+    function sleep(ms: number) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    if (!node.onFail) return KoxyClass.stopSign;
+
+    if (node.onFail.type === "retry" && retry < node.onFail.max) {
+      await sleep(node.onFail.interval || 0);
+
+      Koxy.logger.error(`Node failed, retrying`, err.message || err);
+      return await self.main(node, Koxy, self, retry + 1);
+    }
+
+    if (node.onFail.type === "terminate") {
+      Koxy.logger.error(`Node failed, terminating`, err.message || err);
+      return KoxyClass.stopSign;
+    }
+
+    if (node.onFail.type === "ignore") {
+      Koxy.logger.error(`Node failed, ignoring`, err.message || err);
+      return KoxyClass.ignoreSign;
+    }
+
+    if (node.onFail.type === "custom" && self.failed) {
+      Koxy.logger.error(`Node failed, running custom handler`, err.message || err);
+      return await self.failed(node, Koxy, self);
+    }
+
+    Koxy.logger.error(`Node failed, terminating`, err.message || err);
+    return KoxyClass.stopSign;
+  }
+}),}],
+"end2": [{"type": "return", "id": "end2", "name": "end2", "label": "end2", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.db.get(['test'])"]]}, { main: 
+(async (node: ReturnNode, Koxy: KoxyClass, self) => {
+  try {
+    const inputs = {
+      "response": Koxy.db.get(['test']),
     };
 
     const validator = new ValidateInputs(Koxy, node.inputs);

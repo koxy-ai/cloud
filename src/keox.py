@@ -24,7 +24,7 @@ class Keox:
                 "git clone https://github.com/koxy-ai/cloud /source",
                 f"echo {shlex.quote(json.dumps(self.api))} > /source/src/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
-                f"{self.deno} compile --allow-all --no-check --output /koxy/server /koxy/main.ts",
+                f"{self.deno} compile --allow-all --no-check --unstable --output /koxy/server /koxy/main.ts",
                 f"echo 'Built image version: {version()}'"
             )
         )
@@ -62,7 +62,7 @@ class Keox:
             memory=memory,
             gpu=gpu,
             volumes={
-                "/data": self.build_volume("database")
+                "/data": Keox.build_volume(api, "database")
             }
         )
 
@@ -82,7 +82,8 @@ class Keox:
 
         return [sandbox, host]
 
-    def build_volume(self, name: str):
+    @classmethod
+    def build_volume(cls, api: dict, name: str):
         return modal.Volume.from_name(
             f"vol-{name}-{self.api['id']}", 
             create_if_missing=True

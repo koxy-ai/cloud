@@ -1,1 +1,1 @@
-export async function main(koxy: any, inputs: any) {return true;}
+export async function main(koxy: any, inputs: any) {koxy.db.set(['test'], {value: 'test'}); return true;}

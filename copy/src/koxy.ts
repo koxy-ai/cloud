@@ -2,12 +2,14 @@ import { Env, env } from "./env.ts";
 import { Logger } from "./logger.ts";
 import { Results } from "./results.ts";
 import { Runner } from "./runner.ts";
+import { DB } from "./db.ts";
 import type { Api } from "./index.d.ts"
 
 export class Koxy {
   env: Env;
   logger: Logger;
   results: Results;
+  db: DB;
 
   api: Api;
   runner?: Runner;
@@ -30,12 +32,16 @@ export class Koxy {
 
     this.logger = new Logger(this, log);
     this.results = new Results();
+    this.db = new DB();
+    this.db.init();
 
     this.headers = headers;
     this.body = body;
   }
 
-  async run(path: string, method: string): Promise<{ status: number; body?: any, headers?: Record<string, string> }> {
+  async run(path: string, method: string): Promise<
+    { status: number; body?: any, headers?: Record<string, string> }
+  > {
     try {
       this.runner = new Runner(path, method, this);
       return await this.runner.runLoop();

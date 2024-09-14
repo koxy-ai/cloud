@@ -5,7 +5,7 @@
     "TOKEN2": "VALUE2"
   },
   "flows": {
-    "/api/hi": [
+    "/api/set": [
       {
         "id": "1",
         "name": "1",
@@ -85,6 +85,113 @@
             "description": "",
             "icon": "",
             "next": "end",
+            "inputs": [
+              [
+                {
+                  "key": "date",
+                  "type": "number",
+                  "label": "",
+                  "required": true,
+                  "visible": true
+                },
+                "code:K::Date.now()"
+              ],
+              [
+                {
+                  "key": "hi-s",
+                  "type": "string",
+                  "label": "",
+                  "required": true,
+                  "visible": true
+                },
+                "string:K::hi"
+              ]
+            ],
+            "code": "export async function main(koxy: any, inputs: any) {koxy.db.set(['test'], {value: 'test'}); return true;}"
+          }
+        ]
+      }
+    ],
+    "/api/get": [
+      {
+        "id": "1",
+        "name": "1",
+        "method": "GET",
+        "history": [],
+        "dependecies": [],
+        "start": {
+          "type": "start",
+          "id": "start",
+          "name": "start",
+          "label": "start",
+          "icon": "start",
+          "description": "start",
+          "code": "start",
+          "inputs": [],
+          "next": "node1"
+        },
+        "end": {
+          "type": "return",
+          "id": "end2",
+          "name": "end2",
+          "label": "end2",
+          "icon": "end",
+          "description": "end",
+          "code": "end",
+          "inputs": [
+            [
+              {
+                "key": "response",
+                "type": "string",
+                "label": "",
+                "required": true,
+                "visible": true
+              },
+              "code:K::Koxy.db.get(['test'])"
+            ]
+          ]
+        },
+        "nodes": [
+          {
+            "type": "normal",
+            "id": "node1_2id",
+            "name": "node1_2",
+            "label": "Node",
+            "description": "",
+            "icon": "",
+            "next": "node2_2",
+            "inputs": [
+              [
+                {
+                  "key": "date",
+                  "type": "number",
+                  "label": "",
+                  "required": true,
+                  "visible": true
+                },
+                "code:K::Date.now()"
+              ],
+              [
+                {
+                  "key": "hi-s",
+                  "type": "string",
+                  "label": "",
+                  "required": true,
+                  "visible": true
+                },
+                "string:K::hi"
+              ]
+            ],
+            "code": "export async function main(koxy: any, inputs: any) { return \"Hi\"; }"
+          },
+          {
+            "type": "normal",
+            "id": "node2_2id",
+            "name": "node2_2",
+            "label": "Node",
+            "description": "",
+            "icon": "",
+            "next": "end2",
             "inputs": [
               [
                 {

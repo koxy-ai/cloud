@@ -1,0 +1,1 @@
+export async function main(koxy: any, inputs: any) {return true;}

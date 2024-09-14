@@ -12,8 +12,8 @@ if (typeof api === "string") {
   }
 }
 
-let processing: number = 0;
-let requests: number = 0;
+let processing: number[] = [];
+let requests: number[] = [];
 let usage: number[] = [];
 let idle: number = 0;
 let errors: string[] = [];
@@ -25,14 +25,14 @@ function sleep(ms: number) {
 }
 
 function wasIdle() {
-  if (requests > latestRequestsLookup) {
+  if (requests.length > latestRequestsLookup) {
     latestUsage = 0;
-    latestRequestsLookup = Number(requests);
+    latestRequestsLookup = requests.length;
     return;
   }
 
   idle += 1000 - latestUsage;
-  latestRequestsLookup = Number(requests);
+  latestRequestsLookup = requests.length;
   latestUsage = 0;
 }
 
@@ -62,9 +62,9 @@ const handler = async (request: Request): Promise<Response> => {
       start = 0;
       return new Response(
         JSON.stringify({
-          requests,
+          requests: requests.length,
           usage: usage.reduce((a, b) => a + b, 0),
-          processing,
+          processing: processing.length,
           errors,
           cpus,
           idle,
@@ -76,8 +76,8 @@ const handler = async (request: Request): Promise<Response> => {
       );
     }
 
-    requests++;
-    processing += 1;
+    requests.push(1);
+    processing.push(1);
 
     const koxy = new Koxy(api, request.headers, body, false);
 
@@ -103,11 +103,13 @@ const handler = async (request: Request): Promise<Response> => {
   finally {
     if (start !== 0) {
       const took = Date.now() - start;
+      
       usage.push(took);
+      processing.pop();
+
       if (latestUsage === 0 || took > latestUsage) {
         latestUsage = took;
       }
-      processing -= 1;
 
       const nowCpu = os.cpus().length;
       if (nowCpu !== cpus) {

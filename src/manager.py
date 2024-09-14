@@ -3,8 +3,9 @@ import sys
 
 app = modal.App(name="koxy-sandbox-manager")
 
-image = modal.Image.debian_slim(python_version="3.11.8").pip_install(
-    "modal", "requests"
+image = (
+    modal.Image.debian_slim(python_version="3.11.8")
+    .pip_install("modal", "requests")
 )
 
 @app.function(
@@ -14,7 +15,8 @@ image = modal.Image.debian_slim(python_version="3.11.8").pip_install(
     image=image,
     container_idle_timeout=5,
     mounts=[
-        modal.Mount.from_local_python_packages(
+        modal.Mount
+        .from_local_python_packages(
             "keox", "usage", "sandbox", "timing", "version"
         )
     ],
@@ -57,7 +59,7 @@ def manager():
         cpu = Keox.read_cpu(api)
         [memory_request, memory_limit, memory] = Keox.read_memory(api)
         if full_cpu == None:
-            full_cpu = cpu + 3
+            full_cpu = cpu + 2
 
         idle_cpu = Usage.cpu_per_s(cpu, idle)
         active_cpu = Usage.cpu_per_s(full_cpu, usage)
@@ -178,7 +180,7 @@ def manager():
             return
 
         try:
-            print(f"Checking container {sandbox['host']}")
+            print(f"Communicating with container {sandbox['host']}")
             req = requests.get(
                 sandbox["host"],
                 headers={"KOXY-STATS": "yes"}
@@ -186,7 +188,7 @@ def manager():
             req = req.json()
         except:
             print(
-                f"Container {sandbox['id']} is idle or under heavy load, will check it later!"
+                f"Can't communicate with container {sandbox['id']}"
             )
             return
 

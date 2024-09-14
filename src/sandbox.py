@@ -25,6 +25,7 @@ class Sandbox:
     pool: Dict[str, SandBoxItem]
     local_pool: Dict[str, SandBoxItem]
     creation_state: Dict[str, bool]
+    hosts_pool: Dict[str, str]
     id: str
     api: dict
     keox: Keox
@@ -54,6 +55,7 @@ class Sandbox:
         self.pool = modal.Dict.from_name("sandbox-pool", create_if_missing=True)
         self.creation_state = modal.Dict.from_name("sandbox-creation-state", create_if_missing=True)
         self.apis_pool = modal.Dict.from_name("sandbox-apis", create_if_missing=True)
+        self.hosts_pool = modal.Dict.from_name("sandbox-hosts", create_if_missing=True)
 
     def create(self, onlog: Callable[[str], Any], force_rebuild: bool = False, skip:bool = False) -> SandBoxItem | None:
         # try:
@@ -100,18 +102,9 @@ class Sandbox:
                 "full_limit": timing[2]
             }
 
+            self.hosts_pool[self.id] = host
             self.pool[self.id] = item
             # self.local_pool[self.id] = item
-
-            keep_awake = self.api["keep_awake"] if "keep_awake" in self.api else False
-
-            # remove once the manager is deployed
-            if current != None and keep_awake != True:
-                try:
-                    current = modal.Sandbox.from_id(current["id"])
-                    current.terminate()
-                except:
-                    pass
 
             self.creation_state[self.id] = False
             return item
@@ -138,20 +131,10 @@ class Sandbox:
         return created
 
     def verify_sandbox(self, sandbox: SandBoxItem):
-        timing = self.verify_timing(sandbox=sandbox)
-        if timing == False:
-            return False
-
-        # TODO: Do this only in development if needed for testing, otherwise
-        # the system will auto update on the next container spin
-        # if sandbox["version"] != version():
-        #     return False
-
-        return True
+        return self.verify_timing(sandbox=sandbox)
 
     def verify_timing(self, sandbox: SandBoxItem):
         [created_at, expires_at] = [sandbox["created_at"], sandbox["expires_at"]]
-        # print(expires_at, datetime.now(timezone.utc))
 
         if future(expires_at) < 0:
             return False
@@ -243,12 +226,11 @@ class Sandbox:
 if __name__ == "__main__":
     print("Started")
 
-    test = Sandbox({"id": "123456"}, {})
+    test = Sandbox("test-api-123", {})
 
     start = time.time()
     box_item = test.request(lambda x: print(x))
-    sandbox = modal.Sandbox.from_id(box_item["id"])
-    print(sandbox._hydrate_metadata(None))
+    # sandbox = modal.Sandbox.from_id(box_item["id"])
 
     print(ago(box_item["created_at"]))
     # print(test.state())

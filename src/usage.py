@@ -22,7 +22,7 @@ if __name__ == "__main__":
     base = Usage.cpu_per_s(cores, idle)
     print("Idle CPU:", base)
 
-    actual = Usage.cpu_per_s(cores + 4, usage)
+    actual = Usage.cpu_per_s(cores + 2, usage)
     print("Active CPU:", actual)
 
     total_cpu = actual + base

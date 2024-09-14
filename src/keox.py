@@ -19,11 +19,9 @@ class Keox:
             .apt_install("git")
             .apt_install("curl")
             .apt_install("unzip")
-            .apt_install("sysstat")
             .run_commands(
                 "curl -fsSL https://deno.land/install.sh | sh -s v1.38.2",
                 "git clone https://github.com/koxy-ai/cloud /source",
-                # TODO: Update this to be /source/src/ once ready to have deployed APIs:
                 f"echo {shlex.quote(json.dumps(self.api))} > /source/src/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
                 f"{self.deno} compile --allow-all --no-check --output /koxy/server /koxy/main.ts",
@@ -39,7 +37,6 @@ class Keox:
 
         onlog(f"Compiling container image...")
         image = self.build_image(onlog, force)
-        vol = modal.Volume.from_name(f"vol-{api['id']}", create_if_missing=True)
 
         onlog(f"Building image & warming up new container...")
 
@@ -64,6 +61,9 @@ class Keox:
             cpu=cpu,
             memory=memory,
             gpu=gpu,
+            volumes={
+                "/data": self.build_volume("database")
+            }
         )
 
         onlog(f"Built container: {sandbox.object_id}")
@@ -71,7 +71,6 @@ class Keox:
         tunnel = sandbox.tunnels()[0]
         host = f"https://{tunnel.host}"
         onlog(f"Connected HTTPS tunnel with {host}")
-        start_at = time.time()
 
         for line in sandbox.stdout:
             if str.startswith(str.lower(line), "listening"):
@@ -82,6 +81,12 @@ class Keox:
             onlog(line)
 
         return [sandbox, host]
+
+    def build_volume(self, name: str):
+        return modal.Volume.from_name(
+            f"vol-{name}-{self.api['id']}", 
+            create_if_missing=True
+        )
 
     @classmethod
     def read_property(cls, api: dict, key: str, default: Any = None):

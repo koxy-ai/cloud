@@ -79,7 +79,7 @@ const handler = async (request: Request): Promise<Response> => {
     requests.push(1);
     processing.push(1);
 
-    const koxy = new Koxy(api, request.headers, body, false);
+    const koxy = new Koxy(api, request.headers, body);
 
     const res = await koxy.run(
       request.headers.get("path") ||

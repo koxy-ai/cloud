@@ -244,11 +244,11 @@ const nodes: Record<
     return KoxyClass.stopSign;
   }
 }),}],
-"end2": [{"type": "return", "id": "end2", "name": "end2", "label": "end2", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.db.get(['test'])"]]}, { main: 
+"end2": [{"type": "return", "id": "end2", "name": "end2", "label": "end2", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "value", "type": "string", "label": "", "required": true, "visible": true}, "code:K::(await Koxy.db.get(['test'])).value"]]}, { main: 
 (async (node: ReturnNode, Koxy: KoxyClass, self) => {
   try {
     const inputs = {
-      "response": Koxy.db.get(['test']),
+      "value": (await Koxy.db.get(['test'])).value,
     };
 
     const validator = new ValidateInputs(Koxy, node.inputs);

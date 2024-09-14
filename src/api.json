@@ -128,7 +128,7 @@
           "description": "start",
           "code": "start",
           "inputs": [],
-          "next": "node1"
+          "next": "node1_2"
         },
         "end": {
           "type": "return",
@@ -141,13 +141,13 @@
           "inputs": [
             [
               {
-                "key": "response",
+                "key": "value",
                 "type": "string",
                 "label": "",
                 "required": true,
                 "visible": true
               },
-              "code:K::Koxy.db.get(['test'])"
+              "code:K::(await Koxy.db.get(['test'])).value"
             ]
           ]
         },

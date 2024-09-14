@@ -28,17 +28,3 @@ export class DB {
     await this.kv.set(key, value);
   }
 }
-
-(async () => {
-  const db = new DB();
-  await db.init();
-
-  console.time("set");
-  await db.set(["test"], { value: "test2" });
-  console.timeEnd("set");
-
-  console.time("get");
-  const get = await db.get(["test"]);
-  console.timeEnd("get");
-  console.log(get);
-})();

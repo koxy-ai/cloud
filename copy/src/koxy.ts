@@ -16,6 +16,7 @@ export class Koxy {
 
   headers: Request["headers"];
   body: Record<string, any>;
+  query: Record<string, string> = {};
 
   static stopSign: string = "<KOXY_STOP>";
   static ignoreSign: string = "<KOXY_IGNORE>";
@@ -24,6 +25,7 @@ export class Koxy {
 
   constructor(
     api: Api,
+    path: string,
     headers: Request["headers"],
     body: Record<string, any> = {},
     log: boolean = true,
@@ -38,6 +40,10 @@ export class Koxy {
 
     this.headers = headers;
     this.body = body;
+
+    const url = new URL(path, "http://localhost");
+    this.query = Object.fromEntries(url.searchParams.entries());
+    console.log(this.query);
   }
 
   async run(path: string, method: string): Promise<

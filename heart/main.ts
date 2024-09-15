@@ -38,6 +38,15 @@ function wasIdle() {
 
 setInterval(wasIdle, 1000);
 
+const excludeRoot = (url: string) => {
+  url = url.replace("https://", "").replace("http://", "");
+  const slashIndex = url.indexOf("/");
+  if (slashIndex === -1) {
+    return url;
+  }
+  return url.slice(slashIndex);
+}
+
 const handler = async (request: Request): Promise<Response> => {
   let start = Date.now();
 
@@ -79,13 +88,11 @@ const handler = async (request: Request): Promise<Response> => {
     requests.push(1);
     processing.push(1);
 
-    const koxy = new Koxy(api, request.headers, body);
+    const path = request.headers.get("path") || excludeRoot(request.url);
+    const method = request.headers.get("method") || request.method;
 
-    const res = await koxy.run(
-      request.headers.get("path") ||
-        request.url.replace("http://127.0.0.1:9009", ""),
-      request.headers.get("method") || request.method,
-    );
+    const koxy = new Koxy(api, path, request, body);
+    const res = await koxy.run(path, method);
 
     return new Response(JSON.stringify(res.body || "{}"), {
       status: res.status,

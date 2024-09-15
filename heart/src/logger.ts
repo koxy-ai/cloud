@@ -13,8 +13,16 @@ export class Logger {
     this.enabled = enabled;
   }
 
-  getPrefix(prefix: string) {
+  private getPrefix(prefix: string) {
     return `${this.koxy.runningNode}-${prefix}::`;
+  }
+
+  private push(prefix: string, args: any[]): void {
+    args.forEach(element => {
+      this.koxy.logs.push({
+        prefix, log: element
+      });
+    });
   }
 
   info(...args: any): void {
@@ -22,7 +30,10 @@ export class Logger {
       return;
     }
 
-    console.log(this.getPrefix(this.infoPrefix), ...args);
+    const prefix = this.getPrefix(this.infoPrefix);
+
+    console.log(prefix, ...args);
+    this.push(prefix, args);
   }
 
   warn(...args: any): void {
@@ -30,7 +41,10 @@ export class Logger {
       return;
     }
 
-    console.warn(this.getPrefix(this.wanrPrefix), ...args);
+    const prefix = this.getPrefix(this.wanrPrefix);
+
+    console.warn(prefix, ...args);
+    this.push(prefix, args);
   }
 
   error(...args: any): void {
@@ -38,6 +52,9 @@ export class Logger {
       return;
     }
 
-    console.error(this.getPrefix(this.errorPrefix), ...args);
+    const prefix = this.getPrefix(this.errorPrefix);
+
+    console.error(prefix, ...args);
+    this.push(prefix, args);
   }
 }

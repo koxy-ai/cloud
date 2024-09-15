@@ -120,3 +120,9 @@ export interface Api {
   autoscale?: boolean;
   flows: Record<string, Flow[]>;
 }
+
+export interface Res {
+  status: number;
+  body?: any;
+  headers?: Record<string, string>;
+}

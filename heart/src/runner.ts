@@ -1,6 +1,6 @@
 import { Koxy as KoxyClass } from "./koxy.ts";
 import { ValidateInputs } from "./validate-inputs.ts"; // never remove this
-import type { Flow, KoxyNode, ReturnNode, NormalNode } from "./index.d.ts";
+import type { Flow, KoxyNode, NormalNode, Res, ReturnNode } from "./index.d.ts";
 import * as koxyNodes from "./nodes/index.ts";
 
 type NodeFunc = (
@@ -167,11 +167,7 @@ export class Runner {
     }
   }
 
-  async runLoop(): Promise<{
-    status: number;
-    body?: any;
-    headers?: Record<string, string>;
-  }> {
+  async runLoop(): Promise<Res> {
     if (this.flow.start.type !== "start") {
       this.koxy.logger.error(`Flow ${this.path} has no start node`);
       return { status: 500 };
@@ -191,7 +187,11 @@ export class Runner {
 
     if (res?.type === "return") {
       this.koxy.logger.info(`Flow ${this.path} returned`);
-      return { status: res.res.status ?? 200, body: res.res, headers: res.res.headers };
+      return {
+        status: res.res.status ?? 200,
+        body: res.res,
+        headers: res.res.headers,
+      };
     }
 
     this.koxy.logger.info(`Flow ${this.path} finished with no response`);

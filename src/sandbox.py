@@ -8,6 +8,7 @@ import shlex
 import requests
 from timing import min_to_ms, future, ago, read_iso
 from version import version
+import os
 
 class SandBoxItem(TypedDict):
     id: str
@@ -33,6 +34,7 @@ class Sandbox:
     def __init__(
         self, 
         api: dict | str,
+        api_path: str,
         local_pool: Dict[str, SandBoxItem] = {},
     ):
         self.update_pools()
@@ -46,7 +48,7 @@ class Sandbox:
 
         self.id = api["id"]
         self.api = api
-        self.keox = Keox(self.api)
+        self.keox = Keox(self.api, api_path)
 
         self.apis_pool[self.id] = self.api
         pass
@@ -225,8 +227,9 @@ class Sandbox:
 
 if __name__ == "__main__":
     print("Started")
+    this_file_dir = os.path.dirname(os.path.realpath(__file__))
 
-    test = Sandbox("test-api-123", {})
+    test = Sandbox("test-api-123", f"{this_file_dir}/api.json", {})
 
     start = time.time()
     box_item = test.request(lambda x: print(x))

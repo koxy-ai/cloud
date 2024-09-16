@@ -1,13 +1,23 @@
 {
-  "id": "test-api-12345",
+  "id": "test-api-12345fdishfgfgj",
   "env": {
     "TOKEN1": "VALUE1",
     "TOKEN2": "VALUE2"
   },
   "collections": [
-    {"id": "test", "schema": [[
-      {"key": "value", "type": "string", "required": true}, ""
-    ]]}
+    {
+      "id": "test",
+      "schema": [
+        [
+          {
+            "key": "value",
+            "type": "string",
+            "required": true
+          },
+          ""
+        ]
+      ]
+    }
   ],
   "flows": {
     "/api/set": [

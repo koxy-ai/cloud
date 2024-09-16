@@ -121,24 +121,30 @@ class Builder:
         print(f"Done building project: {self.api['id']}")
 
 if __name__ == "__main__":
-    with open(f"{os.path.dirname(os.path.realpath(__file__))}/api.json") as f:
+    args = sys.argv[1:]
+    options = {}
+
+    for arg in args:
+        [key, value] = str.split(arg, "=")
+        options[key] = value
+
+    if "source" not in options:
+        print("ERROR: No source specified")
+        exit(1)
+
+    if "path" not in options:
+        print("ERROR: No path specified")
+        exit(1)
+
+    if "api_path" not in options:
+        print("ERROR: No api_path specified")
+        exit(1)
+
+    api_path = options["api_path"]
+
+    with open(api_path, "r") as f:
         testapi = json.load(f)
         f.close()
-
-        args = sys.argv[1:]
-        options = {}
-
-        for arg in args:
-            [key, value] = str.split(arg, "=")
-            options[key] = value
-
-        if "source" not in options:
-            print("ERROR: No source specified")
-            exit(1)
-
-        if "path" not in options:
-            print("ERROR: No path specified")
-            exit(1)
 
         builder = Builder(
             options["source"],

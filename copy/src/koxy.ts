@@ -11,7 +11,7 @@ export class Koxy {
   results: Results;
   db: DB;
 
-  private api: Api;
+  api: Api;
   runner?: Runner;
 
   req: Request;

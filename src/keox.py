@@ -4,31 +4,37 @@ import shlex
 import time
 from typing import Callable, Any
 from version import version
+import hashlib
 
 class Keox:
     api: dict
+    api_path: str
     deno: str = "/root/.deno/bin/deno"
 
-    def __init__(self, api: dict):
+    def __init__(self, api: dict, api_path: str):
         self.api = api
+        self.api_path = api_path
         pass
+
+    def hash(self):
+        return hashlib.sha256(json.dumps(self.api).encode()).hexdigest()
 
     def build_image(self, onlog: Callable[[str], Any], force: bool = False):
         # pip = Keox.read_property(self.api, "pip", [])
 
         image = (
-            modal.Image.debian_slim(python_version="3.11.8", force_build=force)
+            modal.Image.debian_slim(python_version="3.11.8", force_build=True)
             .apt_install("git")
             .apt_install("curl")
             .apt_install("unzip")
-            # .pip_install(pip)
+            .copy_local_file(self.api_path, "/api.json")
             .run_commands(
                 "curl -fsSL https://deno.land/install.sh | sh -s v1.38.2",
                 "git clone https://github.com/koxy-ai/cloud /source",
-                f"echo {shlex.quote(json.dumps(self.api))} > /source/src/api.json",
-                "python /source/src/builder.py source=/source/heart path=/koxy",
-                # f"{self.deno} compile --allow-all --no-check --unstable --output /koxy/server /koxy/main.ts",
-                f"echo 'Built image version: {version()}'"
+                # f"echo {shlex.quote(json.dumps(self.api))} > /source/src/api.json",
+                "python /source/src/builder.py source=/source/heart path=/koxy api_path=/api.json",
+                f"{self.deno} compile --allow-all --no-check --unstable --output /koxy/server /koxy/main.ts",
+                f"echo 'Built API: {self.api['id']} - hash: {self.hash()} - image version: {version()}'"
             )
         )
 

@@ -1,6 +1,7 @@
+import { exec } from "node:child_process";
 import { Koxy as KoxyClass } from "./koxy.ts";
 import { ValidateInputs } from "./validate-inputs.ts"; // never remove this
-import type { Flow, KoxyNode, ReturnNode, NormalNode } from "./index.d.ts";
+import type { Flow, KoxyNode, NormalNode, Res, ReturnNode } from "./index.d.ts";
 import * as koxyNodes from "./nodes/index.ts";
 
 type NodeFunc = (
@@ -14,26 +15,74 @@ const nodes: Record<
   string,
   [KoxyNode, { main: NodeFunc; failed?: NodeFunc }]
 > = {
-  "node1": [{"type": "normal", "id": "node1id", "name": "node1", "label": "Node", "description": "", "icon": "", "next": "node2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "export async function main(koxy: any, inputs: any) { return \"Hi\"; }"}, { main: 
+  "node1": [{"type": "python", "id": "node1id", "name": "node1", "label": "Node", "description": "", "icon": "", "next": "node2", "inputs": [[{"key": "date", "type": "number", "label": "", "required": true, "visible": true}, "code:K::Date.now()"], [{"key": "hi-s", "type": "string", "label": "", "required": true, "visible": true}, "string:K::hi"]], "code": "def main(inputs):\n  print('Hi from python/main')\n  def nest():\n   return 'hello from nested'\n  return nest()"}, { main: 
 (async (node: NormalNode, Koxy: KoxyClass, self: {
   main: Function;
   failed?: Function;
 }, retry: number = 0): Promise<any> => {
   try {
-
     const inputs = {
       parent: undefined,
       children: [],
       "date": Date.now(),"hi-s": "hi",
     };
 
-    const validator = new ValidateInputs(Koxy, node.inputs);
+    const validator = new ValidateInputs(Koxy, node.inputs || []);
     const valid = validator.validate(inputs);
     if (!valid) return KoxyClass.stopSign;
 
-    return await koxyNodes.node1(Koxy, inputs);
-  } catch (err) {
+    const filePath = "/home/user/cloud/copy/src/nodes/node1id.py";
+    let command = `python3 ${filePath}`;
 
+    for (const key of Object.keys(inputs)) {
+      command += ` --${key} `;
+      command += JSON.stringify(inputs[key]);
+    }
+
+    const process: Promise<{
+      type: "error" | "success";
+      value: string | undefined;
+    }> = new Promise((resolve) => {
+      exec(command, (err, stdout, stderr) => {
+        if (stderr) {
+          const errors = stderr.split("\n");
+          for (const error of errors) {
+            Koxy.logger.error("python process ->", error);
+          }
+        }
+
+        if (err) {
+          resolve({ type: "error", value: err });
+          return;
+        }
+
+        let res: any;
+
+        for (const line of (stdout || "").split("\n")) {
+          if (line.startsWith("<KOXY_RES> ")) {
+            res = line.replace("<KOXY_RES> ", "");
+            continue;
+          }
+          Koxy.logger.info("python process ->", line);
+        }
+
+        try {
+          const json = JSON.parse(res || "{}");
+          res = json;
+        } catch {}
+
+        resolve({ type: "success", value: res });
+      });
+    });
+
+    const res = await process;
+
+    if (res.type === "error") {
+      throw new Error(res.value);
+    }
+
+    return res.value;
+  } catch (err) {
     function sleep(ms: number) {
       return new Promise((resolve) => setTimeout(resolve, ms));
     }
@@ -58,7 +107,10 @@ const nodes: Record<
     }
 
     if (node.onFail.type === "custom" && self.failed) {
-      Koxy.logger.error(`Node failed, running custom handler`, err.message || err);
+      Koxy.logger.error(
+        `Node failed, running custom handler`,
+        err.message || err,
+      );
       return await self.failed(node, Koxy, self);
     }
 
@@ -374,6 +426,29 @@ export class Runner {
     return { type: "return", res };
   }
 
+  async runPython(name: string) {
+    const [node, funcs] = nodes[name] || [{}, undefined];
+
+    if (node.type !== "python") {
+      this.koxy.logger.error(`Node ${name} is not a python node`);
+      return KoxyClass.stopSign;
+    }
+
+    const res = await funcs.main(node, this.koxy, funcs);
+
+    if (res === KoxyClass.stopSign) {
+      return res;
+    }
+
+    if (res === KoxyClass.ignoreSign) {
+      this.koxy.results.set(name, undefined);
+      return;
+    }
+
+    this.koxy.results.set(name, res);
+    return await this.runNext(node.next);
+  }
+
   async runNext(name: string) {
     if (this.isValidString(this.koxy.runningNode)) {
       this.koxy.logger.info(`Node ${this.koxy.runningNode} finished`);
@@ -414,16 +489,14 @@ export class Runner {
         return await this.runController(node.name);
       case "return":
         return await this.runReturn(node.name);
+      case "python":
+        return await this.runPython(node.name);
       default:
         throw new Error(`Invalid node type`);
     }
   }
 
-  async runLoop(): Promise<{
-    status: number;
-    body?: any;
-    headers?: Record<string, string>;
-  }> {
+  async runLoop(): Promise<Res> {
     if (this.flow.start.type !== "start") {
       this.koxy.logger.error(`Flow ${this.path} has no start node`);
       return { status: 500 };
@@ -443,7 +516,11 @@ export class Runner {
 
     if (res?.type === "return") {
       this.koxy.logger.info(`Flow ${this.path} returned`);
-      return { status: res.res.status ?? 200, body: res.res, headers: res.res.headers };
+      return {
+        status: res.res.status ?? 200,
+        body: res.res,
+        headers: res.res.headers,
+      };
     }
 
     this.koxy.logger.info(`Flow ${this.path} finished with no response`);

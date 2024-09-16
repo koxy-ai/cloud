@@ -1,3 +1,4 @@
+import { exec } from "node:child_process";
 import { Koxy as KoxyClass } from "./koxy.ts";
 import { ValidateInputs } from "./validate-inputs.ts"; // never remove this
 import type { Flow, KoxyNode, NormalNode, Res, ReturnNode } from "./index.d.ts";
@@ -122,6 +123,29 @@ export class Runner {
     return { type: "return", res };
   }
 
+  async runPython(name: string) {
+    const [node, funcs] = nodes[name] || [{}, undefined];
+
+    if (node.type !== "python") {
+      this.koxy.logger.error(`Node ${name} is not a python node`);
+      return KoxyClass.stopSign;
+    }
+
+    const res = await funcs.main(node, this.koxy, funcs);
+
+    if (res === KoxyClass.stopSign) {
+      return res;
+    }
+
+    if (res === KoxyClass.ignoreSign) {
+      this.koxy.results.set(name, undefined);
+      return;
+    }
+
+    this.koxy.results.set(name, res);
+    return await this.runNext(node.next);
+  }
+
   async runNext(name: string) {
     if (this.isValidString(this.koxy.runningNode)) {
       this.koxy.logger.info(`Node ${this.koxy.runningNode} finished`);
@@ -162,6 +186,8 @@ export class Runner {
         return await this.runController(node.name);
       case "return":
         return await this.runReturn(node.name);
+      case "python":
+        return await this.runPython(node.name);
       default:
         throw new Error(`Invalid node type`);
     }

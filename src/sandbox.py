@@ -80,7 +80,7 @@ class Sandbox:
                 return self.create(onlog, skip=True)
 
             self.creation_state[self.id] = True
-            timeout = self.api["timeout"] if "timeout" in self.api else 120
+            timeout = self.api["timeout"] if "timeout" in self.api else 60
             self.api["timeout"] = timeout
 
             if self.id in self.local_pool:

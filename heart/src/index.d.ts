@@ -18,7 +18,11 @@ interface CustomOnFail {
   code: string;
 }
 
-export type OnFail = RetryOnFail | TerminateOnFail | IgnoreOnFail | CustomOnFail;
+export type OnFail =
+  | RetryOnFail
+  | TerminateOnFail
+  | IgnoreOnFail
+  | CustomOnFail;
 
 interface UntypedInput {
   key: string;
@@ -69,6 +73,12 @@ export interface NormalNode extends BaseNode {
   onFail?: OnFail;
 }
 
+export interface PythonNode extends BaseNode {
+  type: "python";
+  next: string;
+  onFail?: OnFail;
+}
+
 export interface ConditionNode extends BaseNode {
   type: "condition";
   next: { success: string; fail: string };
@@ -89,7 +99,12 @@ export interface ReturnNode extends BaseNode {
   type: "return";
 }
 
-export type KoxyNode = NormalNode | ConditionNode | ControlNode | ReturnNode;
+export type KoxyNode =
+  | NormalNode
+  | ConditionNode
+  | ControlNode
+  | ReturnNode
+  | PythonNode;
 
 export interface Flow {
   id: string;

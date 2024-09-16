@@ -21,6 +21,9 @@ class Node:
 
         elif self.node["type"] == "return":
             file = f"{self.templates}/end.ts"
+        
+        elif self.node["type"] == "python":
+            file = f"{self.templates}/python.ts"
 
         with open(file, "r") as f:
             content = f.read()
@@ -47,6 +50,7 @@ class Node:
 
         func = str.replace(func, "// <INPUTS>", inputs)
         func = str.replace(func, "; // <NODE_CALL>", " await koxyNodes." + self.node["name"] + "(Koxy, inputs);")
+        func = str.replace(func, "<PYTHON_FILE_PATH>", f'{self.root}/{self.node["id"]}.py')
 
         # while the func ends with a white space remove it:
         if str.endswith(func, "\n"):
@@ -66,10 +70,22 @@ class Node:
     def export(self):
         return "export { main as " + self.node["name"] + " } from " + '"' + f'./{self.node["id"]}.ts' + '";'
 
+    def pythonFile(self) -> str:
+        with open(f"{self.templates}/python.py", "r") as f:
+            content = f.read()
+            content = str.replace(content, "# <CODE>", self.node["code"])
+            return content
+
+    def getCode(self):
+        if self.node["type"] != "python":
+            return self.node["code"]
+
+        return self.pythonFile()
+
     def buildNode(self):
         return {
             "caller": self.buildCaller(),
             "command": self.command(),
-            "code": self.node["code"],
+            "code": self.getCode(),
             "export": self.export()
         }

@@ -51,7 +51,7 @@
         },
         "nodes": [
           {
-            "type": "normal",
+            "type": "python",
             "id": "node1id",
             "name": "node1",
             "label": "Node",
@@ -80,7 +80,7 @@
                 "string:K::hi"
               ]
             ],
-            "code": "export async function main(koxy: any, inputs: any) { return \"Hi\"; }"
+            "code": "def main(inputs):\n  print('Hi from python/main')\n  def nest():\n   return 'hello from nested'\n  return nest()"
           },
           {
             "type": "normal",

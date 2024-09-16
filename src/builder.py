@@ -39,7 +39,7 @@ class Builder:
                 f["nodes"].append(f["end"])
 
                 for n in f["nodes"]:
-                    if n["type"] in ["normal", "condition", "return"]:
+                    if n["type"] in ["normal", "condition", "return", "python"]:
                         print(f"Building {n['type']} node: {n['name']}")
                         node = Node(f"{self.path}/src/nodes", f"{self.path}/src/templates", n)
                         built = node.buildNode()
@@ -52,9 +52,18 @@ class Builder:
                         exports += built["export"] + "\n"
                         os.system(f"/bin/bash -c 'touch {self.path}/src/nodes/{n['id']}.ts'")
                         with open(f"{self.path}/src/nodes/{n['id']}.ts", "w") as file:
-                            file.write(n["code"])
+                            file.write(built["code"])
                             file.close()
                             print(f"Wrote {n['type']} node: {n['name']}")
+
+                    elif n["type"] == "python":
+                        print(f"Writing Python node: {n['name']}")
+
+                        os.system(f"/bin/bash -c 'touch {self.path}/src/nodes/{n['id']}.py'")
+                        with open(f"{self.path}/src/nodes/{n['id']}.py", "w") as file:
+                            file.write(built["code"])
+                            file.close()
+                            print(f"Wrote Python node: {n['name']}")
 
                 print(f"Wrote flow {v}->{f['method']}")
 

@@ -3,7 +3,7 @@ import { Logger } from "./logger.ts";
 import { Results } from "./results.ts";
 import { Runner } from "./runner.ts";
 import { DB } from "./db.ts";
-import type { Api } from "./index.d.ts";
+import type { Api, Res } from "./index.d.ts";
 
 export class Koxy {
   env: Env;
@@ -11,26 +11,31 @@ export class Koxy {
   results: Results;
   db: DB;
 
-  api: Api;
+  private api: Api;
   runner?: Runner;
 
+  req: Request;
   headers: Request["headers"];
   body: Record<string, any>;
   query: Record<string, string> = {};
+  logs: any[] = [];
 
   static stopSign: string = "<KOXY_STOP>";
   static ignoreSign: string = "<KOXY_IGNORE>";
 
   runningNode: string = "";
+  status: number = 200;
+  res: Res | undefined = undefined;
 
   constructor(
     api: Api,
     path: string,
-    headers: Request["headers"],
+    req: Request,
     body: Record<string, any> = {},
     log: boolean = true,
   ) {
     this.env = env;
+    this.req = req;
     this.api = api;
 
     this.logger = new Logger(this, log);
@@ -38,7 +43,7 @@ export class Koxy {
     this.db = new DB(this);
     this.db.init();
 
-    this.headers = headers;
+    this.headers = req.headers;
     this.body = body;
 
     const url = new URL(path, "http://localhost");
@@ -46,14 +51,19 @@ export class Koxy {
     console.log(this.query);
   }
 
-  async run(path: string, method: string): Promise<
-    { status: number; body?: any; headers?: Record<string, string> }
-  > {
+  async save() {}
+
+  async run(path: string, method: string): Promise<Res> {
     try {
       this.runner = new Runner(path, method, this);
-      return await this.runner.runLoop();
-    } catch (err) {
-      return {
+      const res = await this.runner.runLoop();
+
+      this.res = res;
+      return res;
+    }
+    catch (err) {
+      this.logger.error(err.message);
+      const res: Res = {
         status: 500,
         body: {
           success: false,
@@ -61,6 +71,9 @@ export class Koxy {
           headers: {},
         },
       };
+
+      this.res = res;
+      return res;
     }
   }
 }

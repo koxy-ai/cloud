@@ -1,1 +1,3 @@
-export async function main(koxy: any, inputs: any) { return "Hi"; }
+def main(inputs):
+  print('Hi from python/main')
+  return 'python response'

@@ -11,7 +11,7 @@ export class Koxy {
   results: Results;
   db: DB;
 
-  api: Api;
+  private api: Api;
   runner?: Runner;
 
   req: Request;
@@ -24,6 +24,8 @@ export class Koxy {
   static ignoreSign: string = "<KOXY_IGNORE>";
 
   runningNode: string = "";
+  status: number = 200;
+  res: Res | undefined = undefined;
 
   constructor(
     api: Api,
@@ -55,11 +57,13 @@ export class Koxy {
     try {
       this.runner = new Runner(path, method, this);
       const res = await this.runner.runLoop();
+
+      this.res = res;
       return res;
     }
     catch (err) {
       this.logger.error(err.message);
-      return {
+      const res: Res = {
         status: 500,
         body: {
           success: false,
@@ -67,6 +71,9 @@ export class Koxy {
           headers: {},
         },
       };
+
+      this.res = res;
+      return res;
     }
   }
 }

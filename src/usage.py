@@ -1,6 +1,6 @@
 class Usage:
     core_per_s = 0.000052
-    gb_ram_per_s = 0.00000757
+    gb_ram_per_s = 0.00000767
 
     @classmethod
     def cpu_per_s(cls, cores: float, seconds: float) -> float:
@@ -12,12 +12,12 @@ class Usage:
 
 
 if __name__ == "__main__":
-    cores = 8
-    ram = (4024, 6048)
+    cores = 1
+    ram = (1024, 2048)
 
     timeout = 500
-    usage = 720
-    idle = 108000
+    usage = 1
+    idle = 119
 
     base = Usage.cpu_per_s(cores, idle)
     print("Idle CPU:", base)

@@ -14,6 +14,8 @@ class Keox:
         pass
 
     def build_image(self, onlog: Callable[[str], Any], force: bool = False):
+        pip = Keox.read_property(self.api, "pip", [])
+
         image = (
             modal.Image.debian_slim(python_version="3.11.8", force_build=force)
             .apt_install("git")
@@ -27,6 +29,7 @@ class Keox:
                 f"{self.deno} compile --allow-all --no-check --unstable --output /koxy/server /koxy/main.ts",
                 f"echo 'Built image version: {version()}'"
             )
+            .pip_install(*pip)
         )
 
         return image

@@ -14,22 +14,22 @@ class Keox:
         pass
 
     def build_image(self, onlog: Callable[[str], Any], force: bool = False):
-        pip = Keox.read_property(self.api, "pip", [])
+        # pip = Keox.read_property(self.api, "pip", [])
 
         image = (
             modal.Image.debian_slim(python_version="3.11.8", force_build=force)
             .apt_install("git")
             .apt_install("curl")
             .apt_install("unzip")
+            # .pip_install(pip)
             .run_commands(
                 "curl -fsSL https://deno.land/install.sh | sh -s v1.38.2",
                 "git clone https://github.com/koxy-ai/cloud /source",
                 f"echo {shlex.quote(json.dumps(self.api))} > /source/src/api.json",
                 "python /source/src/builder.py source=/source/heart path=/koxy",
-                f"{self.deno} compile --allow-all --no-check --unstable --output /koxy/server /koxy/main.ts",
+                # f"{self.deno} compile --allow-all --no-check --unstable --output /koxy/server /koxy/main.ts",
                 f"echo 'Built image version: {version()}'"
             )
-            .pip_install(*pip)
         )
 
         return image
@@ -54,7 +54,7 @@ class Keox:
         onlog(f"[OPTION]: Memory: {memory_request}MB - {memory_limit}MB")
         onlog(f"[OPTION]: GPU: {gpu}")
 
-        build_command = [ f"/koxy/server" ]
+        build_command = [ f"{self.deno} run --allow-all --unstable /koxy/main.ts" ]
 
         sandbox = modal.Sandbox.create(
             *[ "bash", "-c", " && ".join(build_command) ],

@@ -63,7 +63,7 @@ class Keox:
         data_volume = Keox.build_volume(api, "data")
         database_volume = Keox.build_volume(api, Keox.read_property(api, "database", "database"))
 
-        build_command = [ f"{self.deno} run --allow-all --unstable /koxy/main.ts" ]
+        build_command = [ f"/koxy/server" ]
 
         sandbox = modal.Sandbox.create(
             *[ "bash", "-c", " && ".join(build_command) ],

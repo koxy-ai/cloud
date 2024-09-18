@@ -60,6 +60,9 @@ class Keox:
         onlog(f"[OPTION]: Memory: {memory_request}MB - {memory_limit}MB")
         onlog(f"[OPTION]: GPU: {gpu}")
 
+        data_volume = Keox.build_volume(api, "data")
+        database_volume = Keox.build_volume(api, Keox.read_property(api, "database", "database"))
+
         build_command = [ f"{self.deno} run --allow-all --unstable /koxy/main.ts" ]
 
         sandbox = modal.Sandbox.create(
@@ -71,7 +74,8 @@ class Keox:
             memory=memory,
             gpu=gpu,
             volumes={
-                "/data": Keox.build_volume(api, "database")
+                "/data": data_volume,
+                "/database": database_volume
             }
         )
 

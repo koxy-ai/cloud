@@ -14,12 +14,12 @@ export class DB {
     if (this.kv) return;
 
     try {
-      await Deno.stat("/data");
+      await Deno.stat("/database");
     } catch {
-      await Deno.mkdir("/data");
+      await Deno.mkdir("/database");
     }
 
-    this.kv = await Deno.openKv("/data/db.sqlite");
+    this.kv = await Deno.openKv("/database/db.sqlite");
   }
 
   public async get<T = any>(

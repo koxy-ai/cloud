@@ -12,12 +12,12 @@ class Usage:
 
 
 if __name__ == "__main__":
-    cores = 1
-    ram = (1024, 2048)
+    cores = 0.5
+    ram = (2024, 3048)
 
     timeout = 500
-    usage = 1
-    idle = 119
+    usage = 0
+    idle = 3600
 
     base = Usage.cpu_per_s(cores, idle)
     print("Idle CPU:", base)

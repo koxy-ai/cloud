@@ -55,7 +55,7 @@
                 "required": true,
                 "visible": true
               },
-              "code:K::Koxy.results.get(\"node1\")"
+              "code:K::Koxy.results.node1"
             ]
           ]
         },

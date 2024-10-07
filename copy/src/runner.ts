@@ -170,11 +170,11 @@ const nodes: Record<
     return KoxyClass.stopSign;
   }
 }),}],
-"end": [{"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.get(\"node1\")"]]}, { main: 
+"end": [{"type": "return", "id": "end", "name": "end", "label": "end", "icon": "end", "description": "end", "code": "end", "inputs": [[{"key": "response", "type": "string", "label": "", "required": true, "visible": true}, "code:K::Koxy.results.node1"]]}, { main: 
 (async (node: ReturnNode, Koxy: KoxyClass, self) => {
   try {
     const inputs = {
-      "response": Koxy.results.get("node1"),
+      "response": Koxy.results.node1,
     };
 
     const validator = new ValidateInputs(Koxy, node.inputs);

@@ -8,7 +8,7 @@ import type { Api, Res } from "./index.d.ts";
 export class Koxy {
   env: Env;
   logger: Logger;
-  results: Results;
+  results: Record<string, any> = {};
   db: DB;
 
   api: Api;
@@ -39,7 +39,6 @@ export class Koxy {
     this.api = api;
 
     this.logger = new Logger(this, log);
-    this.results = new Results();
     this.db = new DB(this);
     this.db.init();
 
